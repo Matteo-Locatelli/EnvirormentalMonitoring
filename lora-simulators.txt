@@ -1,0 +1,3 @@
+https://simulator.mbed.com/#lorawan
+https://github.com/kartben/lorawan-node-simulator
+https://github.com/brocaar/chirpstack-simulator

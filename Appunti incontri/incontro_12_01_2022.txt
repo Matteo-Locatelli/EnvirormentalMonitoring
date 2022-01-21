@@ -1,0 +1,12 @@
+Aggiungere tabella di soglie per l'adattamento.
+Fare una tabella con i bullet e mettere 3 colonne colonne. Goal | Fenomeno da mitigare | Azione di controllo.
+
+Farsi un'idea dei possibili guasti.
+Va istanziato 2 volte. 
+A livello di nodo Edge --> Controlla le sentinelle, controlla anche il server.
+A livello di application server --> Controlla i nodi edge
+
+Server decide chi fa il lavoro. Algoritmo del bullo.
+
+Si estrae il protocollo lorawan.
+Un mapek per ogni goal.
