@@ -3,10 +3,6 @@ import random
 import time
 from datetime import datetime
 import json
-
-# import paho in python
-from distutils.command.upload import upload
-
 from paho.mqtt.client import Client
 
 # indirizzo IP broker
@@ -112,15 +108,15 @@ username = ""
 password = ""
 
 def connect_mqtt():
-    def on_connect():
-        print("Connected")
+    def on_connect(rc):
+        print("Connected",rc)
 
     # Set Connecting Client ID
     client = Client(client_id=client_id)
     client.username_pw_set(username, password)
-    client.on_connect = on_connect()
+    client.on_connect = on_connect
 
-    print("client connect", client.connect(host=broker, port=port, keepalive=60, bind_address="0.0.0.0"))
+    print("client connect", client.connect(broker, port, 60, "0.0.0.0"))
     return client
 
 
@@ -157,8 +153,9 @@ def join_publish(client):
 def run():
     client = connect_mqtt()
     print(client.is_connected())
-    client.loop_start()
-    publish(client)
+    if(client.is_connected()):
+        client.loop_start()
+        publish(client)
 
 
 if __name__ == '__main__':
