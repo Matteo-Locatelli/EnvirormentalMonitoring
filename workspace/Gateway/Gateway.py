@@ -8,7 +8,7 @@ from paho.mqtt.client import Client
 import paho.mqtt.publish as publish
 
 # indirizzo IP broker
-broker = "localhost"
+broker = "172.28.225.99"
 port = 1883;
 
 # random client_id
@@ -105,8 +105,10 @@ def on_connect_fail():
 def on_publish(client, userdata, mid):
     print("Message pubblished", mid)
 
+
 def on_disconnect(client, userdata, rc):
-   print("client disconnected ok")
+    print("client disconnected ok")
+
 
 def connect_mqtt():
     # Set Connecting Client ID
