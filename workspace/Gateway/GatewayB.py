@@ -14,7 +14,7 @@ server = "localhost:8080"
 dev_eui = bytes([0x0a, 0xc1, 0x4a, 0xad, 0x3e, 0x63, 0x91, 0xa1])
 
 # The API token (retrieved using the web-interface).
-api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiNTFmNWVhMmItZGVkOC00ZjU2LTlkOGYtMTU0YTIwYjZiMDZmIiwiYXVkIjoiYXMiLCJpc3MiOiJhcyIsIm5iZiI6MTY0Mjg3MDU4Miwic3ViIjoiYXBpX2tleSJ9.cCLELlxRPbSk8YFJm4ndjxjssmAX4BKEizDKVp3TWpo"
+api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiMzM4MzY2YTctNWExNy00ZWIxLTljZWMtNGM3MDY3NDExM2Y3IiwiYXVkIjoiYXMiLCJpc3MiOiJhcyIsIm5iZiI6MTY0MjgwMTQ1Mywic3ViIjoiYXBpX2tleSJ9.6XodcL1K4aHufV2c1y6zsTIgK3ddgSGo7DhSqy8aPp0"
 
 if __name__ == "__main__":
   # Connect without using TLS.
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
   # Device-queue API client.
   client = api.DeviceQueueServiceStub(channel)
-
+  api.Gateway
   # Define the API key meta-data.
   auth_token = [("authorization", "Bearer %s" % api_token)]
 

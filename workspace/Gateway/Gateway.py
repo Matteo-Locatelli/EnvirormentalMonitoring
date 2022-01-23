@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 import json
 from paho.mqtt.client import Client
-import paho.mqtt.publish as publish
 
 # indirizzo IP broker
 broker = "172.28.225.99"
@@ -17,11 +16,16 @@ username = "chirpstack_gw"
 password = ""
 
 # topic
-join_topic = "gateway/f23ad78a721d2334/event/join"
+conn_topic = "gateway/f23ad78a721d2334/state/conn"
 up_topic = "gateway/f23ad78a721d2334/event/up"
 stats_topic = "gateway/f23ad78a721d2334/event/stats"
 
 # payloads
+conn_payload = {
+    "gatewayID": "f23ad78a721d2334",
+    "state": "ONLINE"
+}
+
 join_payload = {
     "rxInfo": [
         {
@@ -42,8 +46,8 @@ join_payload = {
                 "accuracy": 0
             },
             "fineTimestampType": "NONE",
-            "context": "YesMuv==",
-            "uplinkID": "03LeeAL/Qs+gNRz7T0M2Rw==",
+            "context": "YesPui==",
+            "uplinkID": str(str(datetime.now()).encode()),
             "crcStatus": "CRC_OK"
         }
     ],
@@ -73,8 +77,8 @@ join_payload = {
 
 stats_payload = {
     "gatewayID": "f23ad78a721d2334",
-    "time": datetime.now().strftime("%H:%M:%S"),
-    "ip": "127.0.0.1",
+    "time": "2022-01-02T15:04:05.999999999Z",
+    "ip": "172.16.209.108",
     "location": {
         "latitude": 45.64721335397582,
         "longitude": 9.597843157441028,
@@ -83,8 +87,8 @@ stats_payload = {
         "accuracy": 0
     },
     "configVersion": "1.2.3",
-    "rxPacketsReceived": 4,
-    "rxPacketsReceivedOK": 1,
+    "rxPacketsReceived": 0,
+    "rxPacketsReceivedOK": 0,
     "txPacketsReceived": 0,
     "txPacketsEmitted": 1
 }
@@ -125,18 +129,25 @@ def connect_mqtt():
     return client
 
 
-def join_publish(client):
-    msg_count = 0
-    time.sleep(1)
-    msg = json.dumps(join_payload)
-    result = client.publish(topic=join_topic, payload=msg)
+def conn_publish(client):
+    msg = json.dumps(conn_payload)
+    result = client.publish(topic=conn_topic, payload=msg)
     # result: [0, 1]
     status = result[0]
     if status == 0:
-        print(f"Send `{msg}` to topic `{join_topic}`")
+        print(f"Send `{msg}` to topic `{conn_topic}`")
     else:
-        print(f"Failed to send message to topic {join_topic}")
-    msg_count += 1
+        print(f"Failed to send message to topic {conn_topic}")
+
+
+def stats_publish(client):
+    msg = json.dumps(stats_payload)
+    result = client.publish(stats_topic, msg)
+    status = result[0]
+    if status == 0:
+        print(f"Send `{msg}` to topic `{stats_topic}`")
+    else:
+        print(f"Failed to send message to topic {stats_topic}")
 
 
 def up_publish(client):
@@ -157,17 +168,6 @@ def up_publish(client):
         print(f"Failed to send message to topic {up_topic}")
 
 
-def stats_publish(client):
-    msg = 1
-    result = client.publish(stats_topic, msg)
-
-    status = result[0]
-    if status == 0:
-        print(f"Send `{msg}` to topic `{stats_topic}`")
-    else:
-        print(f"Failed to send message to topic {stats_topic}")
-
-
 def run():
     client = connect_mqtt()
     time.sleep(2)
@@ -176,14 +176,18 @@ def run():
         print("In wait loop")
         time.sleep(1)
     print("in Main Loop")
-    client.subscribe(stats_topic, 0)
     time.sleep(2)
-    join_publish(client)
-    i = 0
-    while i < 10:
+    conn_publish(client)
+    j = 1
+    while j == 1:
         time.sleep(2)
+        j = int(input('Inserisci 0 per terminare: '))
+
+    i = 0;
+    while i < 10 and j == 2:
+        time.sleep(1)
         stats_publish(client)
-        i = i + 1
+        i += 1
 
     client.loop_stop()
     client.disconnect()
