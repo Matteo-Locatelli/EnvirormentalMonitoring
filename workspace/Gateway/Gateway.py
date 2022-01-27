@@ -7,7 +7,7 @@ import json
 from paho.mqtt.client import Client
 
 # indirizzo IP broker
-broker = "172.28.225.99"
+broker = "172.28.237.167"
 port = 1883;
 
 # random client_id
@@ -17,7 +17,9 @@ password = ""
 
 # topic
 conn_topic = "gateway/f23ad78a721d2334/state/conn"
+config_topic = "gateway/f23ad78a721d2334/device/configuration/indirizzo_device"
 up_topic = "gateway/f23ad78a721d2334/event/up"
+join_topic = "gateway/f23ad78a721d2334/event/join"
 stats_topic = "gateway/f23ad78a721d2334/event/stats"
 
 # payloads
@@ -30,7 +32,7 @@ join_payload = {
     "rxInfo": [
         {
             "gatewayID": "f23ad78a721d2334",
-            "time": datetime.now().strftime("%H:%M:%S"),
+            "time": "2022-01-02T15:04:05.999999999Z",
             "timeSinceGPSEpoch": "1326832.347s",
             "rssi": -60,
             "loRaSNR": 7,
@@ -79,18 +81,7 @@ stats_payload = {
     "gatewayID": "f23ad78a721d2334",
     "time": "2022-01-02T15:04:05.999999999Z",
     "ip": "172.16.209.108",
-    "location": {
-        "latitude": 45.64721335397582,
-        "longitude": 9.597843157441028,
-        "altitude": 0,
-        "source": "UNKNOWN",
-        "accuracy": 0
-    },
-    "configVersion": "1.2.3",
-    "rxPacketsReceived": 0,
-    "rxPacketsReceivedOK": 0,
-    "txPacketsReceived": 0,
-    "txPacketsEmitted": 1
+    "configVersion": "1.2.3"
 }
 
 
@@ -141,8 +132,18 @@ def conn_publish(client):
 
 
 def stats_publish(client):
-    msg = json.dumps(stats_payload)
+    msg = json.dumps(stats_payload).encode("utf-8")
     result = client.publish(stats_topic, msg)
+    status = result[0]
+    if status == 0:
+        print(f"Send `{msg}` to topic `{stats_topic}`")
+    else:
+        print(f"Failed to send message to topic {stats_topic}")
+
+
+def join_publish(client):
+    msg = json.dumps(join_payload)
+    result = client.publish(join_topic, msg)
     status = result[0]
     if status == 0:
         print(f"Send `{msg}` to topic `{stats_topic}`")
@@ -176,15 +177,14 @@ def run():
         print("In wait loop")
         time.sleep(1)
     print("in Main Loop")
-    time.sleep(2)
-    conn_publish(client)
+    time.sleep(1)
     j = 1
     while j == 1:
-        time.sleep(2)
+        time.sleep(1)
         j = int(input('Inserisci 0 per terminare: '))
 
     i = 0;
-    while i < 10 and j == 2:
+    while i < 1 and j == 2:
         time.sleep(1)
         stats_publish(client)
         i += 1

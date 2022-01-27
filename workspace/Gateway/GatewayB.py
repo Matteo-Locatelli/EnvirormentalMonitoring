@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
   # Device-queue API client.
   client = api.DeviceQueueServiceStub(channel)
-  api.Gateway
+
   # Define the API key meta-data.
   auth_token = [("authorization", "Bearer %s" % api_token)]
 
