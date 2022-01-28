@@ -5,15 +5,17 @@ import time
 from datetime import datetime
 import json
 from paho.mqtt.client import Client
+import base64
 
 # indirizzo IP broker
-broker = "172.28.237.167"
+broker = "172.21.185.160"
 port = 1883;
 
-# random client_id
+# client_id
 client_id = "mosq-pyGateway"
 username = "chirpstack_gw"
 password = ""
+netSessionKey = "16826413ee7294311369e4c3a2ce772f"
 
 # topic
 conn_topic = "gateway/f23ad78a721d2334/state/conn"
@@ -22,66 +24,61 @@ up_topic = "gateway/f23ad78a721d2334/event/up"
 join_topic = "gateway/f23ad78a721d2334/event/join"
 stats_topic = "gateway/f23ad78a721d2334/event/stats"
 
+# gateway id
+idGateway = "f23ad78a721d2334"
+encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decode()
+
 # payloads
 conn_payload = {
-    "gatewayID": "f23ad78a721d2334",
+    "gatewayID": encodedIdGateway,
     "state": "ONLINE"
 }
 
-join_payload = {
-    "rxInfo": [
-        {
-            "gatewayID": "f23ad78a721d2334",
-            "time": "2022-01-02T15:04:05.999999999Z",
-            "timeSinceGPSEpoch": "1326832.347s",
-            "rssi": -60,
-            "loRaSNR": 7,
-            "channel": 0,
-            "rfChain": 0,
-            "board": 0,
-            "antenna": 0,
-            "location": {
-                "latitude": 45.64721335397582,
-                "longitude": 9.597843157441028,
-                "altitude": 0,
-                "source": "UNKNOWN",
-                "accuracy": 0
-            },
-            "fineTimestampType": "NONE",
-            "context": "YesPui==",
-            "uplinkID": str(str(datetime.now()).encode()),
-            "crcStatus": "CRC_OK"
-        }
-    ],
-    "txInfo": {
-        "frequency": 433175000,
-        "modulation": "LORA",
-        "loRaModulationInfo": {
-            "bandwidth": 125,
-            "spreadingFactor": 7,
-            "codeRate": "4/5",
-            "polarizationInversion": False
-        }
-    },
-    "phyPayload": {
-        "mhdr": {
-            "mType": "JoinRequest",
-            "major": "LoRaWANR1"
-        },
-        "macPayload": {
-            "joinEUI": "0000000000000000",
-            "devEUI": "0ac14aad3e6391a1",
-            "devNonce": 3447
-        },
-        "mic": "0a25de1f"
+up_payload = {
+  "phyPayload": "gNCwvgAA/gABjXJ+lzvIhdDNA8Yc8izQLw==",
+  "txInfo": {
+    "frequency": 922200000,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 7,
+      "codeRate": "4/5",
+      "polarizationInversion": False
     }
+  },
+  "rxInfo": {
+    "gatewayID": encodedIdGateway,
+    "rssi": -60,
+    "loRaSNR": 7,
+    "channel": 3,
+    "rfChain": 0,
+    "board": 0,
+    "antenna": 0,
+    "location": None,
+    "fineTimestampType": "NONE",
+    "context": "YfM77Q==",
+    "uplinkID": "Cg0mctELRZLfVSHPNQKPqw==",
+    "crcStatus": "CRC_OK"
+  }
 }
 
 stats_payload = {
-    "gatewayID": "f23ad78a721d2334",
-    "time": "2022-01-02T15:04:05.999999999Z",
-    "ip": "172.16.209.108",
-    "configVersion": "1.2.3"
+    "gatewayID": encodedIdGateway,
+    "ip": "172.21.185.160",
+    "time": "2022-01-27T20:12:23Z",
+    "location": None,
+    "configVersion": "",
+    "rxPacketsReceived": 2,
+    "rxPacketsReceivedOK": 0,
+    "txPacketsReceived": 3,
+    "txPacketsEmitted": 0,
+    "metaData": {},
+    "statsID": "JCjPH3pARfeWnuGpcdn1jA==",
+    "txPacketsPerFrequency": {},
+    "rxPacketsPerFrequency": {},
+    "txPacketsPerModulation": [],
+    "rxPacketsPerModulation": [],
+    "txPacketsPerStatus": {}
 }
 
 
@@ -141,25 +138,18 @@ def stats_publish(client):
         print(f"Failed to send message to topic {stats_topic}")
 
 
-def join_publish(client):
-    msg = json.dumps(join_payload)
-    result = client.publish(join_topic, msg)
+def up_publish(client):
+    msg = json.dumps(up_payload)
+    result = client.publish(up_topic, msg)
     status = result[0]
     if status == 0:
-        print(f"Send `{msg}` to topic `{stats_topic}`")
+        print(f"Send `{msg}` to topic `{up_topic}`")
     else:
-        print(f"Failed to send message to topic {stats_topic}")
+        print(f"Failed to send message to topic {up_topic}")
 
 
 def up_publish(client):
-    packettosend = {
-        "confirmed": False,
-        "fPort": 1,
-        "data": "hello"
-    }
-
-    json_packet_to_send = json.dumps(packettosend)
-    msg = 1
+    msg = json.dumps(up_payload)
     result = client.publish(up_topic, msg)
 
     status = result[0]
@@ -178,7 +168,7 @@ def run():
         time.sleep(1)
     print("in Main Loop")
     time.sleep(1)
-    j = 1
+    j = 2
     while j == 1:
         time.sleep(1)
         j = int(input('Inserisci 0 per terminare: '))
@@ -189,6 +179,8 @@ def run():
         stats_publish(client)
         i += 1
 
+    time.sleep(1)
+    up_publish(client)
     client.loop_stop()
     client.disconnect()
 
