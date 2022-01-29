@@ -8,7 +8,7 @@ from paho.mqtt.client import Client
 import base64
 
 # indirizzo IP broker
-broker = "172.21.185.160"
+broker = "172.22.59.140"
 port = 1883;
 
 # client_id
@@ -34,32 +34,37 @@ conn_payload = {
     "state": "ONLINE"
 }
 
+testPhy = {
+    "mes": "hello"
+}
+
+testB = json.dumps(testPhy)
 up_payload = {
-  "phyPayload": "gNCwvgAA/gABjXJ+lzvIhdDNA8Yc8izQLw==",
-  "txInfo": {
-    "frequency": 922200000,
-    "modulation": "LORA",
-    "loRaModulationInfo": {
-      "bandwidth": 125,
-      "spreadingFactor": 7,
-      "codeRate": "4/5",
-      "polarizationInversion": False
+    "phyPayload": json.dumps(testPhy),
+    "txInfo": {
+        "frequency": 922200000,
+        "modulation": "LORA",
+        "loRaModulationInfo": {
+            "bandwidth": 125,
+            "spreadingFactor": 7,
+            "codeRate": "4/5",
+            "polarizationInversion": False
+        }
+    },
+    "rxInfo": {
+        "gatewayID": encodedIdGateway,
+        "rssi": -60,
+        "loRaSNR": 7,
+        "channel": 3,
+        "rfChain": 0,
+        "board": 0,
+        "antenna": 0,
+        "location": None,
+        "fineTimestampType": "NONE",
+        "context": "YfM77Q==",
+        "uplinkID": "Cg0mctELRZLfVSHPNQKPqw==",
+        "crcStatus": "CRC_OK"
     }
-  },
-  "rxInfo": {
-    "gatewayID": encodedIdGateway,
-    "rssi": -60,
-    "loRaSNR": 7,
-    "channel": 3,
-    "rfChain": 0,
-    "board": 0,
-    "antenna": 0,
-    "location": None,
-    "fineTimestampType": "NONE",
-    "context": "YfM77Q==",
-    "uplinkID": "Cg0mctELRZLfVSHPNQKPqw==",
-    "crcStatus": "CRC_OK"
-  }
 }
 
 stats_payload = {
