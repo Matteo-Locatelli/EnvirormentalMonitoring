@@ -4,9 +4,11 @@ import json
 import base64
 from paho.mqtt.client import Client
 import random
+from Crypto.Hash import CMAC
+from Crypto.Cipher import AES
 from PhyPayload import PhyPayload
 from coder import encodePhyPayloadFromJson, encodePhyPayload
-from phy_payload_util import compute_mic
+from phy_payload_util import compute_join_request_mic, compute_uplink_data_mic
 
 # indirizzo IP broker
 broker = "172.22.59.140"
@@ -17,7 +19,10 @@ client_id = "mosq-pyGateway"
 username = "chirpstack_gw"
 password = ""
 netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
-
+appKey = "a772a9b9c627b3a41370b8a8646e6e80"
+appKeyByte = bytearray([0xa7, 0x72, 0xa9, 0xb9, 0xc6, 0x27, 0xb3, 0xa4, 0x13, 0x70, 0xb8, 0xa8, 0x64, 0x6e, 0x6e, 0x80])
+appSkeyByte = bytearray([0xcc, 0x12, 0x5c, 0x2e, 0x6d, 0xec, 0xe0, 0xd0, 0x3d, 0x0f, 0xef, 0x8f, 0x3b, 0xe3, 0xe0, 0x9a])
+#appSkeyByte = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 # gateway id
 idGateway = "f23ad78a721d2334"
 encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decode()
@@ -44,7 +49,7 @@ LoRaWANR0 = "LoRaWANR0"
 # Device data
 devEUI = "0ac14aad3e6391a1"
 joinEUI = "0000000000000000"
-devNonce = random.randint(1000, 2000)
+devNonce = random.randint(10000, 20000)
 
 # payloads
 conn_payload = {
@@ -218,7 +223,10 @@ def join_request_publish(client):
     phyPayload.macPayload.devEUI = devEUI
     phyPayload.macPayload.joinEUI = joinEUI
     phyPayload.macPayload.devNonce = devNonce
-    phyPayload.mic = compute_mic(LoRaWANR1, devEUI, netSessionKey) #non ancora funzionante questo
+    phyPayload.mic = "0"
+    phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
+    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appSkeyByte)  # non ancora funzionante questo
+
     up_payload['phyPayload'] = encodePhyPayload(phyPayload)
     msg = json.dumps(up_payload)
     result = client.publish(up_topic, msg)

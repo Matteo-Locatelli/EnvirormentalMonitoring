@@ -1,0 +1,41 @@
+from coder import decodePhyPayload, encodePhyPayload, encodePhyPayloadFromJson
+import base64
+from phy_payload_util import compute_uplink_data_mic
+
+LoRaWANR1_0 = "LoRaWANR1"
+devEUI = "0ac14aad3e6391a1"
+netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
+
+payloads = ["QBj/XgAACAEB1efWJyP4IQZt84BwnYItoRQB", "QBj/XgAABwEBMBBkiV4q1N23Jv5I3sAE4x3y",
+            "YBj/XgCAAQAAQK1X20rG6SZsDFdeCKDMaCr4vNdaqw==", "gAQDAgEAAAAB4mTU9yQHTwA=",
+            "QBj/XgAABQEBjEq4EVxLInTagRIUG7WsR5Hz"]
+
+testPhy = {
+    "mhdr": {
+        "mType": "ConfirmedDataUp",
+        "major": "LoRaWANR1"
+    },
+    "macPayload": {
+        "fhdr": {
+            "devAddr": "01020304",
+            "fCtrl": {
+                "adr": False,
+                "adrAckReq": False,
+                "ack": False,
+                "fPending": False,
+                "classB": False
+            },
+            "fCnt": 0
+        },
+        "fPort": 0,
+        "frmPayload": [
+            {
+                "bytes": "4mTU9w=="
+            }
+        ]
+    },
+    "mic": "e117d2c0"
+}
+
+phy_payload_byte = data = base64.b64decode(encodePhyPayloadFromJson(testPhy))
+compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 0, 0, 0, netSessionKey)

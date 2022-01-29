@@ -57,7 +57,7 @@ def decodePhyPayload(phy_payload_encoded):
     major = Major(mhdrByte)
     phyPayload.mhdr = MHDR()
 
-    if (major != MAJOR_LoRaWANR1):
+    if major != MAJOR_LoRaWANR1:
         raise Exception("Lorawan version must be 1.0 or 1.1")
     else:
         phyPayload.mhdr.major = "LoRaWANR1"
