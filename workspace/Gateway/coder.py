@@ -228,6 +228,6 @@ def encodePhyPayloadFromJson(json_packet):
     p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
     p.macPayload.fPort = json_packet['macPayload']['fPort']
     for bytes_data in json_packet['macPayload']['frmPayload']:
-        p.macPayload.frmPayload.frames.append(Frame(json.dumps(bytes_data)))
+        p.macPayload.frmPayload.frames.append(Frame(bytes_data['bytes']))
     p.mic = json_packet['mic']
     return encodePhyPayload(p)
