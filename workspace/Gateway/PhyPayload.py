@@ -20,22 +20,27 @@ class FRMPayload:
         self.frames = []
 
 
-class FCTRL:
+class FOpts:
     def __init__(self):
-        self.ADR = True
-        self.ADRACKReq = False
-        self.ACK = False
-        self.ClassB = False
-        self.FPending = False
-        self.fOptsLen = 0
+        self
 
-    def __init__(self, data):
-        self.ADR = data[0] & 0x80 != 0
-        self.ADRACKReq = data[0] & 0x40 != 0
-        self.ACK = data[0] & 0x20 != 0
-        self.ClassB = data[0] & 0x10 != 0
-        self.FPending = data[0] & 0x10 != 0
-        self.fOptsLen = data[0] & 0x0f
+
+class FCTRL:
+    def __init__(self, data=bytearray()):
+        if(len(data) > 0):
+            self.ADR = data[0] & 0x80 != 0
+            self.ADRACKReq = data[0] & 0x40 != 0
+            self.ACK = data[0] & 0x20 != 0
+            self.ClassB = data[0] & 0x10 != 0
+            self.FPending = data[0] & 0x10 != 0
+            self.fOptsLen = data[0] & 0x0f
+        else:
+            self.ADR = False
+            self.ADRACKReq = False
+            self.ACK = False
+            self.ClassB = False
+            self.FPending = False
+            self.fOptsLen = 0
 
     def getByte(self):
         byte = 0x00
@@ -56,15 +61,15 @@ class FCTRL:
 class FHDR:
     def __init__(self):
         self.devAddr = None
-        self.fCtrl = None
+        self.fCtrl = FCTRL()
         self.fCnt = None
 
 
 class MacPayload:
     def __init__(self):
-        self.fhdr = None
+        self.fhdr = FHDR()
         self.fPort = None
-        self.frmPayload = None
+        self.frmPayload = FRMPayload()
         self.joinEUI = None
         self.devEUI = None
         self.devNonce = None
@@ -73,6 +78,6 @@ class MacPayload:
 
 class PhyPayload:
     def __init__(self):
-        self.mhdr = None
-        self.macPayload = None
+        self.mhdr = MHDR()
+        self.macPayload = MacPayload()
         self.mic = None

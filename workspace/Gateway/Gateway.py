@@ -1,11 +1,12 @@
 # import
-import base64
-import random
 import time
-from datetime import datetime
 import json
-from paho.mqtt.client import Client
 import base64
+from paho.mqtt.client import Client
+import random
+from PhyPayload import PhyPayload
+from coder import encodePhyPayloadFromJson, encodePhyPayload
+from phy_payload_util import compute_mic
 
 # indirizzo IP broker
 broker = "172.22.59.140"
@@ -15,18 +16,35 @@ port = 1883;
 client_id = "mosq-pyGateway"
 username = "chirpstack_gw"
 password = ""
-netSessionKey = "16826413ee7294311369e4c3a2ce772f"
-
-# topic
-conn_topic = "gateway/f23ad78a721d2334/state/conn"
-config_topic = "gateway/f23ad78a721d2334/device/configuration/indirizzo_device"
-up_topic = "gateway/f23ad78a721d2334/event/up"
-join_topic = "gateway/f23ad78a721d2334/event/join"
-stats_topic = "gateway/f23ad78a721d2334/event/stats"
+netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
 
 # gateway id
 idGateway = "f23ad78a721d2334"
 encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decode()
+
+# topic
+conn_topic = "gateway/" + idGateway + "/state/conn"
+config_topic = "gateway/" + idGateway + "/device/configuration/indirizzo_device"
+up_topic = "gateway/" + idGateway + "/event/up"
+down_topic = "gateway/" + idGateway + "command/down"
+stats_topic = "gateway/" + idGateway + "/event/stats"
+
+# Message types
+JOIN_REQUEST = "JoinRequest"
+JOIN_ACCEPT = "JoinAccept"
+UNCONFIRMED_DATA_UP = "UnconfirmedDataUp"
+UNCONFIRMED_DATA_DOWN = "UnconfirmedDataDown"
+CONFIRMED_DATA_UP = "ConfirmedDataUp"
+CONFIRMED_DATA_DOWN = "ConfirmedDataDown"
+
+# Major
+LoRaWANR1 = "LoRaWANR1"
+LoRaWANR0 = "LoRaWANR0"
+
+# Device data
+devEUI = "0ac14aad3e6391a1"
+joinEUI = "0000000000000000"
+devNonce = random.randint(1000, 2000)
 
 # payloads
 conn_payload = {
@@ -35,12 +53,34 @@ conn_payload = {
 }
 
 testPhy = {
-    "mes": "hello"
+    "mhdr": {
+        "mType": "ConfirmedDataUp",
+        "major": "LoRaWANR1"
+    },
+    "macPayload": {
+        "fhdr": {
+            "devAddr": "01020304",
+            "fCtrl": {
+                "adr": False,
+                "adrAckReq": False,
+                "ack": False,
+                "fPending": False,
+                "classB": False
+            },
+            "fCnt": 0
+        },
+        "fPort": 10,
+        "frmPayload": [
+            {
+                "bytes": "4mTU9w=="
+            }
+        ]
+    },
+    "mic": "e117d2c0"
 }
 
-testB = json.dumps(testPhy)
 up_payload = {
-    "phyPayload": json.dumps(testPhy),
+    "phyPayload": "",
     "txInfo": {
         "frequency": 922200000,
         "modulation": "LORA",
@@ -86,6 +126,8 @@ stats_payload = {
     "txPacketsPerStatus": {}
 }
 
+canSendData = False
+
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -107,6 +149,17 @@ def on_disconnect(client, userdata, rc):
     print("client disconnected ok")
 
 
+def on_subscribe(client, userdata, mid, granted_qos):
+    print("Subscribed to topic ", mid)
+
+
+def on_message(client, userdata, msg):
+    global canSendData
+    print("Received message: ", msg.payload, " from topic: ", msg.topic)
+    canSendData = True
+    print(msg.payload.decode("utf-8"))
+
+
 def connect_mqtt():
     # Set Connecting Client ID
     client = Client(client_id=client_id)
@@ -115,6 +168,9 @@ def connect_mqtt():
     client.on_connect_fail = on_connect_fail
     client.on_publish = on_publish
     client.on_disconnect = on_disconnect
+    client.on_subscribe = on_subscribe
+    client.on_message = on_message
+
     try:
         print("client connect", client.connect(broker, port, 60))
     except:
@@ -144,16 +200,7 @@ def stats_publish(client):
 
 
 def up_publish(client):
-    msg = json.dumps(up_payload)
-    result = client.publish(up_topic, msg)
-    status = result[0]
-    if status == 0:
-        print(f"Send `{msg}` to topic `{up_topic}`")
-    else:
-        print(f"Failed to send message to topic {up_topic}")
-
-
-def up_publish(client):
+    up_payload['phyPayload'] = encodePhyPayloadFromJson(testPhy)
     msg = json.dumps(up_payload)
     result = client.publish(up_topic, msg)
 
@@ -162,9 +209,33 @@ def up_publish(client):
         print(f"Send `{msg}` to topic `{up_topic}`")
     else:
         print(f"Failed to send message to topic {up_topic}")
+
+
+def join_request_publish(client):
+    phyPayload = PhyPayload()
+    phyPayload.mhdr.mType = JOIN_REQUEST
+    phyPayload.mhdr.major = LoRaWANR1
+    phyPayload.macPayload.devEUI = devEUI
+    phyPayload.macPayload.joinEUI = joinEUI
+    phyPayload.macPayload.devNonce = devNonce
+    phyPayload.mic = compute_mic(LoRaWANR1, devEUI, netSessionKey) #non ancora funzionante questo
+    up_payload['phyPayload'] = encodePhyPayload(phyPayload)
+    msg = json.dumps(up_payload)
+    result = client.publish(up_topic, msg)
+
+    status = result[0]
+    if status == 0:
+        print(f"Send `{msg}` to topic `{up_topic}`")
+    else:
+        print(f"Failed to send message to topic {up_topic}")
+
+
+def subscribe(client):
+    client.subscribe(down_topic)
 
 
 def run():
+    global canSendData
     client = connect_mqtt()
     time.sleep(2)
     client.loop_start()
@@ -173,19 +244,30 @@ def run():
         time.sleep(1)
     print("in Main Loop")
     time.sleep(1)
-    j = 2
-    while j == 1:
-        time.sleep(1)
-        j = int(input('Inserisci 0 per terminare: '))
+    subscribe(client)
+    join_request_publish(client)
+    j = 0
+    while not canSendData and j < 4:
+        print("Wait for join accept")
+        time.sleep(10)
+        j += 1
 
-    i = 0;
-    while i < 1 and j == 2:
-        time.sleep(1)
-        stats_publish(client)
-        i += 1
+    if canSendData:
+        j = 2
+        while j == 1:
+            time.sleep(1)
+            j = int(input('Inserisci 0 per terminare: '))
 
-    time.sleep(1)
-    up_publish(client)
+        i = 0;
+        while i < 1 and j == 2:
+            time.sleep(1)
+            stats_publish(client)
+            i += 1
+
+        time.sleep(1)
+        up_publish(client)
+    else:
+        print("JoinRequest failed")
     client.loop_stop()
     client.disconnect()
 

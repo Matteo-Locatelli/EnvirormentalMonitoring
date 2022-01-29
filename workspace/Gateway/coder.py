@@ -1,8 +1,10 @@
+from types import SimpleNamespace
 import json
+import jsonpickle
+from json import JSONEncoder
 import base64
-import binascii
-from PhyPayload import *
 import struct
+from PhyPayload import *
 
 MTYPE_JOIN_REQUEST = 0
 MTYPE_JOIN_ACCEPT = 1
@@ -206,3 +208,26 @@ def encodePhyPayload(phyPayload):
         return base64.b64encode(data).decode()
     else:
         print("Unsupported type")
+
+
+class PhyPayloadFEncoder(JSONEncoder):
+    def default(self, o):
+        return o.__dict__
+
+
+def encodePhyPayloadFromJson(json_packet):
+    p = PhyPayload()
+    p.mhdr.mType = json_packet['mhdr']['mType']
+    p.mhdr.major = json_packet['mhdr']['major']
+    p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
+    p.macPayload.fhdr.fCtrl.ADR = json_packet['macPayload']['fhdr']['fCtrl']['adr']
+    p.macPayload.fhdr.fCtrl.ADRACKReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
+    p.macPayload.fhdr.fCtrl.ACK = json_packet['macPayload']['fhdr']['fCtrl']['ack']
+    p.macPayload.fhdr.fCtrl.FPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
+    p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
+    p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
+    p.macPayload.fPort = json_packet['macPayload']['fPort']
+    for bytes_data in json_packet['macPayload']['frmPayload']:
+        p.macPayload.frmPayload.frames.append(Frame(json.dumps(bytes_data)))
+    p.mic = json_packet['mic']
+    return encodePhyPayload(p)
