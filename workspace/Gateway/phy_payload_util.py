@@ -7,6 +7,7 @@ LoRaWANR1_0 = "LoRaWANR1"
 
 
 def compute_join_request_mic(phy_payload, app_key):
+    key = bytes.fromhex(app_key)
     mic = bytearray(4)
     mhdr = phy_payload[0:1]
     mac_payload = phy_payload[1:-4]
@@ -15,8 +16,10 @@ def compute_join_request_mic(phy_payload, app_key):
     mic_bytes += mhdr
     mic_bytes += mac_payload
 
-    ap_mic = CMAC.new(app_key, ciphermod=AES)
+    IV = os.urandom(16)
 
+    ap_mic = CMAC.new(key, ciphermod=AES)
+    ap_mic.update(mic_bytes)
     mic[:] = ap_mic.digest()[0:4]
 
     return mic.hex()

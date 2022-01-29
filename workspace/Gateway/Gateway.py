@@ -31,7 +31,7 @@ encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decod
 conn_topic = "gateway/" + idGateway + "/state/conn"
 config_topic = "gateway/" + idGateway + "/device/configuration/indirizzo_device"
 up_topic = "gateway/" + idGateway + "/event/up"
-down_topic = "gateway/" + idGateway + "command/down"
+down_topic = "gateway/" + idGateway + "/command/down"
 stats_topic = "gateway/" + idGateway + "/event/stats"
 
 # Message types
@@ -225,7 +225,7 @@ def join_request_publish(client):
     phyPayload.macPayload.devNonce = devNonce
     phyPayload.mic = "0"
     phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
-    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appSkeyByte)  # non ancora funzionante questo
+    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)  # non ancora funzionante questo
 
     up_payload['phyPayload'] = encodePhyPayload(phyPayload)
     msg = json.dumps(up_payload)
