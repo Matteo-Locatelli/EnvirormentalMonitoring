@@ -1,33 +1,46 @@
+import json
+
+
 class MHDR:
-    def __init__(self):
-        self.mType = None
-        self.major = None
+    def __init__(self, mType=None, major=None):
+        self.mType = mType
+        self.major = major
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 
 class Frame:
-    def __init__(self):
-        self.bytes = None
 
-    def __init__(self, bytes_data):
+    def __init__(self, bytes_data=None):
         if type(bytes_data) is bytes:
             self.bytes = bytes_data.decode()
         else:
             self.bytes = bytes_data
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 
 class FRMPayload:
     def __init__(self):
         self.frames = []
 
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 
 class FOpts:
     def __init__(self):
         self
 
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 
 class FCTRL:
     def __init__(self, data=bytearray()):
-        if(len(data) > 0):
+        if (len(data) > 0):
             self.ADR = data[0] & 0x80 != 0
             self.ADRACKReq = data[0] & 0x40 != 0
             self.ACK = data[0] & 0x20 != 0
@@ -57,12 +70,18 @@ class FCTRL:
         return "ADR:%02s ADRACKReq:%02s ACK:%02s ClassB:%02s FPending:%02s fOptsLen:%01x" % (
             self.ADR, self.ADRACKReq, self.ACK, self.ClassB, self.FPending, self.fOptsLen)
 
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 
 class FHDR:
     def __init__(self):
         self.devAddr = None
         self.fCtrl = FCTRL()
         self.fCnt = None
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
 
 class MacPayload:
@@ -75,9 +94,15 @@ class MacPayload:
         self.devNonce = None
         self.bytes = None
 
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 
 class PhyPayload:
     def __init__(self):
         self.mhdr = MHDR()
         self.macPayload = MacPayload()
         self.mic = None
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)

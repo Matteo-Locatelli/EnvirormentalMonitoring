@@ -4,9 +4,9 @@ import json
 import base64
 from paho.mqtt.client import Client
 import random
-from utils.phy_payload import PhyPayload
+from payloads.phy_payload import PhyPayload
 from utils.coder import encodePhyPayloadFromJson, encodePhyPayload
-from utils.phy_payload_util import compute_join_request_mic, compute_uplink_data_mic
+from utils.payload_util import compute_join_request_mic
 
 # indirizzo IP broker
 broker = "172.22.59.140"

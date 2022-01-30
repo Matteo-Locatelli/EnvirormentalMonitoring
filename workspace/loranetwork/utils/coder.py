@@ -1,18 +1,10 @@
 from json import JSONEncoder
 import base64
 import struct
-from utils.phy_payload import *
 
-MTYPE_JOIN_REQUEST = 0
-MTYPE_JOIN_ACCEPT = 1
-MTYPE_UNCONFIRMED_DATA_UP = 2
-MTYPE_UNCONFIRMED_DATA_DOWN = 3
-MTYPE_CONFIRMED_DATA_UP = 4
-MTYPE_CONFIRMED_DATA_DOWN = 5
-MTYPE_RFU = 6
-MTYPE_PROPRIETARY = 7
-MAJOR_LoRaWANR1 = 0
-MAJOR_LoRaWANR0 = 1
+from enums.major_type_enum import MajorTypeEnum
+from payloads.phy_payload import *
+from enums.message_type_enum import MessageTypeEnum
 
 
 def MType(byte):
@@ -50,16 +42,19 @@ def decodePhyPayload(phy_payload_encoded):
     mic = data[-4:]
     assert (len(data) == len(mhdrByte) + len(macPayloadByte) + len(mic))
 
-    mtype = MType(mhdrByte)
-    major = Major(mhdrByte)
+    mtype_key = MType(mhdrByte)
+    major_key = Major(mhdrByte)
+    mtype = MessageTypeEnum.findByKey(mtype_key)
+    major = MajorTypeEnum.findByKey(major_key)
+
     phyPayload.mhdr = MHDR()
 
-    if major != MAJOR_LoRaWANR1:
+    if major != MajorTypeEnum.LoRaWANR1:
         raise Exception("Lorawan version must be 1.0 or 1.1")
     else:
-        phyPayload.mhdr.major = "LoRaWANR1"
+        phyPayload.mhdr.major = major.getName()
 
-    if mtype == MTYPE_JOIN_REQUEST:
+    if mtype == MessageTypeEnum.JOIN_REQUEST:
         print(" *** Join-request")
         joinEUI = data[1:9]
         devEUI = data[9:17]
@@ -69,7 +64,7 @@ def decodePhyPayload(phy_payload_encoded):
         joinEUI = joinEUI[::-1]
         devEUI = devEUI[::-1]
         nonce = nonce[::-1]
-        phyPayload.mhdr.mType = "JoinRequest"
+        phyPayload.mhdr.mType = mtype.getName()
         phyPayload.macPayload.joinEUI = joinEUI.hex()
         phyPayload.macPayload.devEUI = devEUI.hex()
         phyPayload.macPayload.devNonce = int.from_bytes(nonce, 'big')
@@ -78,14 +73,16 @@ def decodePhyPayload(phy_payload_encoded):
         print("  DevEUI: %s" % devEUI.hex())
         print("  Nonce:  %s" % nonce.hex())
         print("  MIC: %s" % mic.hex())
-    elif mtype == MTYPE_JOIN_ACCEPT:
+    elif mtype == MessageTypeEnum.JOIN_ACCEPT:
         print(" *** Join Accept")
-        phyPayload.mhdr.mType = "JoinAccept"
+        phyPayload.mhdr.mType = mtype.getName()
         phyPayload.macPayload = MacPayload()
         phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
         phyPayload.mic = mic.hex()
         print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
-    elif mtype == MTYPE_UNCONFIRMED_DATA_UP or mtype == MTYPE_CONFIRMED_DATA_UP or mtype == MTYPE_CONFIRMED_DATA_DOWN or mtype == MTYPE_UNCONFIRMED_DATA_DOWN:
+    elif mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP.getKey() or mtype == MessageTypeEnum.CONFIRMED_DATA_UP \
+            or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
+        phyPayload.mhdr.mType = mtype.getName()
         macPayload = MacPayload()
 
         fCtrl = FCTRL(macPayloadByte[4:5])
@@ -99,18 +96,7 @@ def decodePhyPayload(phy_payload_encoded):
         phyPayload.macPayload = macPayload
         phyPayload.mic = mic.hex()
 
-        if mtype == MTYPE_UNCONFIRMED_DATA_UP:
-            phyPayload.mhdr.mType = "UnconfirmedDataUp"
-            print(" *** Unconfirmed data up")
-        elif mtype == MTYPE_CONFIRMED_DATA_UP:
-            print(" *** Confirmed data up")
-            phyPayload.mhdr.mType = "ConfirmedDataUp"
-        elif mtype == MTYPE_UNCONFIRMED_DATA_DOWN:
-            phyPayload.mhdr.mType = "UnconfirmedDataDown"
-            print(" *** Unconfirmed data down")
-        else:
-            print(" *** Confirmed data down")
-            phyPayload.mhdr.mType = "ConfirmedDataDown"
+        print(" *** ", mtype.getName())
 
         print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
         print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
@@ -121,26 +107,6 @@ def decodePhyPayload(phy_payload_encoded):
         print("Unsupported type")
 
     return phyPayload
-
-
-def get_mhdr(mhdr):
-    if mhdr.major != "LoRaWANR1":
-        raise Exception("Lorawan version must be 1.0 or 1.1")
-
-    if mhdr.mType == "JoinRequest":
-        return MTYPE_JOIN_REQUEST
-    elif mhdr.mType == "JoinAccept":
-        return MTYPE_JOIN_ACCEPT
-    elif mhdr.mType == "UnconfirmedDataUp":
-        return MTYPE_UNCONFIRMED_DATA_UP
-    elif mhdr.mType == "ConfirmedDataUp":
-        return MTYPE_CONFIRMED_DATA_UP
-    elif mhdr.mType == "UnconfirmedDataDown":
-        return MTYPE_UNCONFIRMED_DATA_DOWN
-    elif mhdr.mType == "ConfirmedDataDown":
-        return MTYPE_CONFIRMED_DATA_DOWN
-    else:
-        raise Exception("Invalid mType")
 
 
 def encodeDevAddr(data):
@@ -156,16 +122,16 @@ def encodeFHDR(fhdr):
 
 
 def encodePhyPayload(phyPayload):
-    mtype = get_mhdr(phyPayload.mhdr)
+    mtype = MessageTypeEnum.findByName(phyPayload.mhdr.mType)
     data = bytearray()
+    print(" *** ", mtype.getName())
 
-    if mtype == MTYPE_JOIN_REQUEST:
-        print(" *** Join-request")
+    if mtype == MessageTypeEnum.JOIN_REQUEST:
         joinEUI = int(phyPayload.macPayload.joinEUI, 16).to_bytes(8, 'big')
         devEUI = int(phyPayload.macPayload.devEUI, 16).to_bytes(8, 'big')
         nonce = phyPayload.macPayload.devNonce.to_bytes(2, 'big')
 
-        data += (mtype << 5).to_bytes(1, 'big')
+        data += (mtype.getKey() << 5).to_bytes(1, 'big')
         joinEUI = joinEUI[::-1]
         devEUI = devEUI[::-1]
         nonce = nonce[::-1]
@@ -174,15 +140,15 @@ def encodePhyPayload(phyPayload):
         data += nonce
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
-    elif mtype == MTYPE_JOIN_ACCEPT:
-        print(" *** Join Accept")
-        data += (mtype << 5).to_bytes(1, 'big')
+    elif mtype == MessageTypeEnum.JOIN_ACCEPT:
+        data += (mtype.getKey() << 5).to_bytes(1, 'big')
         data += base64.b64decode(phyPayload.macPayload.bytes.encode())
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
-    elif mtype == MTYPE_CONFIRMED_DATA_UP or mtype == MTYPE_UNCONFIRMED_DATA_UP or mtype == MTYPE_CONFIRMED_DATA_DOWN or mtype == MTYPE_UNCONFIRMED_DATA_DOWN:
+    elif mtype == MessageTypeEnum.CONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP \
+            or mtype == MessageTypeEnum.CONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
 
-        data += (mtype << 5).to_bytes(1, 'big')
+        data += (mtype.getKey() << 5).to_bytes(1, 'big')
 
         data += encodeFHDR(phyPayload.macPayload.fhdr)
         data += int(phyPayload.macPayload.fPort).to_bytes(1, 'big')
@@ -193,23 +159,9 @@ def encodePhyPayload(phyPayload):
 
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
 
-        if mtype == MTYPE_UNCONFIRMED_DATA_UP:
-            print(" *** Unconfirmed data up")
-        elif mtype == MTYPE_CONFIRMED_DATA_UP:
-            print(" *** Confirmed data up")
-        elif mtype == MTYPE_UNCONFIRMED_DATA_DOWN:
-            print(" *** Unconfirmed data down")
-        else:
-            print(" *** Confirmed data down")
-
         return base64.b64encode(data).decode()
     else:
         print("Unsupported type")
-
-
-class PhyPayloadFEncoder(JSONEncoder):
-    def default(self, o):
-        return o.__dict__
 
 
 def encodePhyPayloadFromJson(json_packet):

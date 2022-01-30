@@ -1,7 +1,12 @@
+import json
+
 from Crypto.Hash import CMAC
 from Crypto.Cipher import AES
-import binascii
 import os
+from typing import TypeVar
+
+T = TypeVar('T')
+
 
 LoRaWANR1_0 = "LoRaWANR1"
 
@@ -27,6 +32,7 @@ def compute_join_request_mic(phy_payload, app_key):
 
 def compute_uplink_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey):
     mic = bytearray(4)
+    key = bytes.fromhex(fNwkSIntKey)
     sNwkSIntKey = bytearray(16)
     mhdr = phy_payload[0:1]
     mac_payload = phy_payload[1:-4]
@@ -70,40 +76,19 @@ def compute_uplink_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwk
     b1[3] = txDR
     b1[4] = txCh
 
-    sn_mic = CMAC.new(fNwkSIntKey.encode(), ciphermod=AES)
-
-    if mac_version == LoRaWANR1_0:  # mic[:] = cmacF[0:4]
-        mic[0:4] = sn_mic.digest()[0:4]
+    fn_mic = CMAC.new(key, ciphermod=AES)
+    fn_mic.update(mic_bytes)
+    if mac_version == LoRaWANR1_0:
+        mic[:] = fn_mic.digest()[0:4]
 
     return mic.hex()
 
 
-def compute_mic(data, devAdress, netSessionKey):
-    # based on https://lora-alliance.org/sites/default/files/2018-04/lorawantm_specification_-v1.1.pdf#page=27
+def getObjectFromJson(obj: T):
+    json_str_object = json.dumps(obj.toJson())
+    json_object = json.loads(json_str_object)
 
-    fcntup = [0x00, 0x00, 0x00, 0x00]
+    def remove_nulls(d):
+        return {k: v for k, v in d.items() if v is not None}
 
-    b0 = [0x49, 0x00, 0x00, 0x00, 0x00]
-    b0 += [0x00]  # dir
-    b0 += devAdress[::-1]
-    b0 += fcntup
-    b0 += [0x00]
-    b0 += [len(data)]
-    b0 += data
-
-    b1 = [0x49, 0x00, 0x00]
-    b1 += [0x02]  # txdr
-    b1 += [0x00]  # txch
-    b1 += [0x00]  # dir
-    b1 += devAdress[::-1]
-    b1 += fcntup
-    b1 += [0x00]
-    b1 += [len(data)]
-    b1 += data
-
-    # sn_mic = CMAC.encode(bytes(netSessionKey), bytes(b1))[:2]
-    sn_mic = CMAC.new(netSessionKey, ciphermod=AES)
-    fn_mic = CMAC.encode(bytes("config['fnwksintkey']"), bytes(b0))[:2]
-    mic = list(map(int, sn_mic))
-    mic += list(map(int, fn_mic))
-    return mic
+    return json.loads(json_object, object_hook=remove_nulls)
