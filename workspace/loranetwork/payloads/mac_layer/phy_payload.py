@@ -6,6 +6,12 @@ class MHDR:
         self.mType = mType
         self.major = major
 
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.mType.__eq__(other.mType) and self.major.__eq__(other.major)
+
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
@@ -18,12 +24,11 @@ class Frame:
         else:
             self.bytes = bytes_data
 
-    def toJson(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-class FOpts:
-    def __init__(self):
-        self.frames = []
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.adr.__eq__(other.adr)
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -61,6 +66,14 @@ class FCTRL:
         return "ADR:%02s ADRACKReq:%02s ACK:%02s ClassB:%02s FPending:%02s fOptsLen:%01x" % (
             self.adr, self.adrAckReq, self.ack, self.classB, self.fPending, self.fOptsLen)
 
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.adr.__eq__(other.adr) and self.adrAckReq.__eq__(other.adrAckReq) and \
+               self.ack.__eq__(other.ack) and self.classB.__eq__(other.classB) and \
+               self.fPending.__eq__(other.fPending) and self.fOptsLen.__eq__(other.fOptsLen)
+
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
@@ -71,6 +84,13 @@ class FHDR:
         self.fCtrl = FCTRL()
         self.fCnt = None
         self.fOpts = None
+
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.devAddr.__eq__(other.devAddr) and self.fCtrl.__eq__(other.fCtrl) and \
+               self.fCnt.__eq__(other.fCnt) and self.fOpts.__eq__(other.fOpts)
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
@@ -86,6 +106,16 @@ class MacPayload:
         self.devNonce = None
         self.bytes = None
 
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.fhdr.__eq__(other.fhdr) and self.fPort.__eq__(other.fPort) and \
+               self.frmPayload.__eq__(other.frmPayload) and self.joinEUI.__eq__(other.joinEUI) and \
+               self.devEUI.__eq__(other.devEUI) and self.devNonce.__eq__(other.devNonce) and \
+               self.bytes.__eq__(other.bytes)
+
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
@@ -95,6 +125,13 @@ class PhyPayload:
         self.mhdr = MHDR()
         self.macPayload = MacPayload()
         self.mic = None
+
+    def __eq__(self, other):
+        if not isinstance(other, PhyPayload):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.mhdr.__eq__(other.mhdr) and self.macPayload.__eq__(other.macPayload) and self.mic.__eq__(other.mic)
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
