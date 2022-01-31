@@ -47,12 +47,18 @@ class Test_coder(unittest.TestCase):
     def tearDown(self):
         print("TearDown")
 
-
+    #Confronto tra i Payloads in base64
     def test_encodePhyPayload(self):
         self.assertEqual(self.payloads[0], coder.encodePhyPayloadFromJson(self.json1) )
 
+    # funziona tranne per il campo f0pts a none
+    # Confronto tra i JSON dei payload
     def test_decodePhyPayload(self):
         self.assertEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[0])), self.json1)
+
+    #Confronto tra i PayPayloads
+    def test_phyPayload(self):
+        self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.getPhyPayloadFromJson(self.json1))
 
 
 if __name__ == '__main__':
