@@ -223,7 +223,7 @@ def join_request_publish(client):
     phyPayload.macPayload.devNonce = devNonce
     phyPayload.mic = "0"
     phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
-    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)  # non ancora funzionante questo
+    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)
 
     up_payload['phyPayload'] = encodePhyPayload(phyPayload)
     msg = json.dumps(up_payload)

@@ -29,11 +29,11 @@ def decodeFHDR(data):
     fhdr = FHDR()
     fhdr.devAddr = decodeDevAddr(data[0:4]).hex()
     fhdr.fCtrl = FCTRL(data[4:5])
-    fCnt_byte = bytearray(6)
+    fCnt_byte = bytearray(2)
     fCnt_byte += data[5:7]
     fhdr.fCnt = int.from_bytes(fCnt_byte, 'big')
     if len(data) > 7:
-        fhdr.fOpts.frames.append(Frame(base64.b64encode(data[7:])))
+        fhdr.fOpts.append(Frame(base64.b64encode(data[7:])))
     return fhdr
 
 
@@ -45,6 +45,11 @@ def get_command_payload(command_type, data):
             mac_command_payload.margin = data[1] - 64
         else:
             mac_command_payload.margin = data[1]
+    elif command_type == MacCommandEnum.NEW_CHANNEL_REQ:
+        mac_command_payload.chIndex = data[0]
+        mac_command_payload.freq = int.from_bytes(data[1:4], 'little') * 100
+        mac_command_payload.maxDR = data[4] & ((1 << 3) ^ (1 << 2) ^ (1 << 1) ^ (1 << 0))
+        mac_command_payload.minDR = (data[4] & ((1 << 7) ^ (1 << 6) ^ (1 << 5) ^ (1 << 4))) >> 4
 
     return mac_command_payload
 
@@ -86,7 +91,7 @@ def decode_frm_payload_to_mac_commands(app_key, is_uplink, dev_addr, fCnt, frame
     for frame in frames:
         data.append(bytearray(base64.b64decode(frame.bytes)))
 
-    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
+    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'big'))
     encrypted_data = []
     for d in data:
         encrypted_data.append(encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, d))
@@ -150,9 +155,7 @@ def decodePhyPayload(phy_payload_encoded):
         macPayload.fhdr = decodeFHDR(macPayloadByte[0:7 + fCtrl.fOptsLen])
         macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
 
-        frmPayload = FRMPayload()
-        frmPayload.frames.append(Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
-        macPayload.frmPayload = frmPayload
+        macPayload.frmPayload.append(Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
 
         phyPayload.macPayload = macPayload
         phyPayload.mic = mic.hex()

@@ -1,3 +1,4 @@
+import base64
 import json
 
 from Crypto.Hash import CMAC
@@ -11,14 +12,14 @@ LoRaWANR1_0 = "LoRaWANR1"
 
 def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
     key = bytes.fromhex(app_key)
-    #key = app_key
+    # key = app_key
     pLen = len(data)
     if pLen % 16 != 0:
         data += bytearray(16 - (pLen % 16))
 
     cipher = AES.new(key, AES.MODE_ECB)
 
-    s = bytearray(16)
+
     a = bytearray(16)
     a[0] = 0x01
     if not is_uplink:
@@ -33,10 +34,13 @@ def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
     i = 0
     while i < len(data) / 16:
         a[15] = int(i + 1)
-        s[:] = cipher.decrypt(a)
+
+        s = bytearray(16)
+        s = cipher.encrypt(a)
+
         j = 0
         while j < len(s):
-            data[i * 16 + j] = data[i * 16 + j] ^ s[j]
+            data[i * 16 + j] = int(data[i * 16 + j]) ^ (s[j])
             j += 1
 
         i += 1

@@ -14,7 +14,8 @@ payloads = ["QBj/XgAACAEB1efWJyP4IQZt84BwnYItoRQB", "QBj/XgAABwEBMBBkiV4q1N23Jv5
             "YNsYlgGgAwAAGrqJ/zsoFt14PfBHAtlnItU1mCQrl/8=", "gAQDAgEDAAAGcwcK4mTU9+EX0sA=",
             "YHNUcACgAAAAzWFT3ZMc/A9otKSGoQ33kg/Z80K4hBk="]
 
-p = decodePhyPayload(payloads[-1])
+p = decodePhyPayload("YKmbBwGgAQAA3s0o6XpEg709qE45mZK/hfM07NFXhiM=")
+print(getJsonFromObject(p))
 testPhy = {
     "mhdr": {
         "mType": "ConfirmedDataUp",
@@ -43,15 +44,15 @@ testPhy = {
 }
 print(getJsonFromObject(p))
 mac_command_payload_list_fopts = decode_fopts_payload_to_mac_commands(
-    MessageTypeEnum.findByName(p.mhdr.mType).isUplink(), p.macPayload.fhdr.fOpts.frames)
+    MessageTypeEnum.findByName(p.mhdr.mType).isUplink(), p.macPayload.fhdr.fOpts)
 for mac_command_payload_fopts in mac_command_payload_list_fopts:
     print(getJsonFromObject(mac_command_payload_fopts))
 
-mac_command_payload_list_frmpl = decode_frm_payload_to_mac_commands(netSKey,
+mac_command_payload_list_frmpl = decode_frm_payload_to_mac_commands(appKey,
                                                                     MessageTypeEnum.findByName(p.mhdr.mType).isUplink(),
                                                                     p.macPayload.fhdr.devAddr,
                                                                     p.macPayload.fhdr.fCnt,
-                                                                    p.macPayload.frmPayload.frames)
+                                                                    p.macPayload.frmPayload)
 for mac_command_payload_frmpl in mac_command_payload_list_frmpl:
     print(getJsonFromObject(mac_command_payload_frmpl))
 
