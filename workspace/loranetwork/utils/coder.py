@@ -183,7 +183,7 @@ def encodeFHDR(fhdr):
     byte = bytearray()
     byte += encodeDevAddr(int(fhdr.devAddr, 16).to_bytes(4, 'little'))
     byte += fhdr.fCtrl.getByte()
-    byte += fhdr.fCnt.to_bytes(2, 'big')
+    byte += fhdr.fCnt.to_bytes(2, 'little')
     return byte
 
 
