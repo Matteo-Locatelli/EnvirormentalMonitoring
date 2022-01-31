@@ -90,7 +90,7 @@ def decode_frm_payload_to_mac_commands(app_key, is_uplink, dev_addr, fCnt, frame
     encrypted_data = []
     for d in data:
         encrypted_data.append(encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, d))
-    encrypted_data[0] = bytes.fromhex("070880DE8C50070950E68C50070A20EE8C5006")
+
     return decode_data_payload_to_mac_commands(is_uplink, encrypted_data)
 
 
