@@ -4,7 +4,7 @@ import json
 import base64
 from paho.mqtt.client import Client
 import random
-from payloads.phy_payload import PhyPayload
+from payloads.mac_layer.phy_payload import PhyPayload
 from utils.coder import encodePhyPayloadFromJson, encodePhyPayload
 from utils.payload_util import compute_join_request_mic
 

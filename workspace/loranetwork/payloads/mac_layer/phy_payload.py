@@ -32,7 +32,7 @@ class FRMPayload:
 
 class FOpts:
     def __init__(self):
-        self
+        self.frames = []
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -79,6 +79,7 @@ class FHDR:
         self.devAddr = None
         self.fCtrl = FCTRL()
         self.fCnt = None
+        self.fOpts = FOpts()
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

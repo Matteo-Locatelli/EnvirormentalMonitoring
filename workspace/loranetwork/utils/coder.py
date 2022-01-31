@@ -1,10 +1,12 @@
-from json import JSONEncoder
 import base64
 import struct
 
+from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
-from payloads.phy_payload import *
+from payloads.mac_layer.mac_payload import MacCommandItem, MacCommandPayload
+from payloads.mac_layer.phy_payload import *
 from enums.message_type_enum import MessageTypeEnum
+from utils.payload_util import encrypt_frm_payload
 
 
 def MType(byte):
@@ -24,13 +26,72 @@ def decodeMic(data):
 
 
 def decodeFHDR(data):
-    FHdr = FHDR()
-    FHdr.devAddr = decodeDevAddr(data[0:4]).hex()
-    FHdr.fCtrl = FCTRL(data[4:5])
+    fhdr = FHDR()
+    fhdr.devAddr = decodeDevAddr(data[0:4]).hex()
+    fhdr.fCtrl = FCTRL(data[4:5])
     fCnt_byte = bytearray(6)
     fCnt_byte += data[5:7]
-    FHdr.fCnt = int.from_bytes(fCnt_byte, 'big')
-    return FHdr
+    fhdr.fCnt = int.from_bytes(fCnt_byte, 'big')
+    if len(data) > 7:
+        fhdr.fOpts.frames.append(Frame(base64.b64encode(data[7:])))
+    return fhdr
+
+
+def get_command_payload(command_type, data):
+    mac_command_payload = MacCommandPayload()
+    if command_type == MacCommandEnum.DEVICE_STATUS_ANS:
+        mac_command_payload.battery = data[0]
+        if data[1] > 31:
+            mac_command_payload.margin = data[1] - 64
+        else:
+            mac_command_payload.margin = data[1]
+
+    return mac_command_payload
+
+
+def decode_data_payload_to_mac_commands(is_uplink, frames):
+    if len(frames) == 0:
+        return []
+
+    if len(frames) != 1:
+        raise Exception("lorawan: exactly one Payload expected")
+
+    data = frames[0]
+
+    mac_command_payload_list = []
+    i = 0
+    while i < len(data):
+        mac_command_payload = MacCommandItem()
+        command_type = MacCommandEnum.findByKey(data[i], is_uplink)
+        if command_type is None:
+            raise Exception("Unknown mac command")
+        payloadLenght = command_type.getPayloadLenght()
+        mac_command_payload.cid = command_type.getName()
+        mac_command_payload.payload = get_command_payload(command_type, data[i + 1:i + 1 + payloadLenght])
+        mac_command_payload_list.append(mac_command_payload)
+        i = i + 1 + payloadLenght
+
+    return mac_command_payload_list
+
+
+def decode_fopts_payload_to_mac_commands(is_uplink, frames):
+    data = []
+    for frame in frames:
+        data.append(base64.b64decode(frame.bytes))
+    return decode_data_payload_to_mac_commands(is_uplink, data)
+
+
+def decode_frm_payload_to_mac_commands(app_key, is_uplink, dev_addr, fCnt, frames):
+    data = []
+    for frame in frames:
+        data.append(bytearray(base64.b64decode(frame.bytes)))
+
+    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
+    encrypted_data = []
+    for d in data:
+        encrypted_data.append(encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, d))
+    encrypted_data[0] = bytes.fromhex("070880DE8C50070950E68C50070A20EE8C5006")
+    return decode_data_payload_to_mac_commands(is_uplink, encrypted_data)
 
 
 def decodePhyPayload(phy_payload_encoded):
@@ -80,7 +141,7 @@ def decodePhyPayload(phy_payload_encoded):
         phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
         phyPayload.mic = mic.hex()
         print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
-    elif mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP.getKey() or mtype == MessageTypeEnum.CONFIRMED_DATA_UP \
+    elif mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.CONFIRMED_DATA_UP \
             or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
         phyPayload.mhdr.mType = mtype.getName()
         macPayload = MacPayload()

@@ -8,9 +8,8 @@ from datetime import datetime
 from enums.crc_status_enum import CRCStatusEnum
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
-from payloads.phy_payload import PhyPayload
 from payloads.up_payload import UpPayload
-from utils.payload_util import getObjectFromJson
+from utils.payload_util import getJsonFromObject
 
 # Payload message types
 from payloads.conn_payload import ConnPayload
@@ -94,7 +93,7 @@ class EdgeNode:
         conn_payload.gatewayID = self.encoded_id_gateway
 
         # json conversion
-        json_conn_payload = getObjectFromJson(conn_payload)
+        json_conn_payload = getJsonFromObject(conn_payload)
         message = json.dumps(json_conn_payload)
 
         result = self.client.publish(topic=conn_topic, payload=message)
@@ -120,7 +119,7 @@ class EdgeNode:
         stats_payload.statsID = base64.b64encode(randstr.encode()).decode()
 
         # json conversion
-        json_stats_payload = getObjectFromJson(stats_payload)
+        json_stats_payload = getJsonFromObject(stats_payload)
         message = json.dumps(json_stats_payload)
 
         result = self.client.publish(stats_topic, message)
@@ -140,7 +139,7 @@ class EdgeNode:
         join_request_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
 
         # json conversion
-        json_join_request_payload = getObjectFromJson(join_request_payload)
+        json_join_request_payload = getJsonFromObject(join_request_payload)
         message = json.dumps(json_join_request_payload)
 
         result = client.publish(up_topic, message)
