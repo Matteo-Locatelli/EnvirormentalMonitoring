@@ -11,7 +11,7 @@ appKey = "a772a9b9c627b3a41370b8a8646e6e80"
 appSKey = "880d2a5d7869a9e2f26989a1ab66548d"
 
 id_gateway_list = ["f23ad78a721d2334"]
-{
+devStatus = {
     "totalCount": "1",
     "result": [
         {

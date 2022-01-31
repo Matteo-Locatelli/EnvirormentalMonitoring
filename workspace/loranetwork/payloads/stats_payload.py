@@ -17,7 +17,7 @@ class StatsPayload:
     def __init__(self, id_gateway="", ip="", time="", configVersion="", rxPacketsReceived=0, rxPacketsReceivedOK=0,
                  txPacketsReceived=0, txPacketsEmitted=0, statsID="", location=None, metaData=Metadata(),
                  txPacketsPerFrequency=PacketsPerFrequency(), rxPacketsPerFrequency=PacketsPerFrequency(),
-                 txPacketsPerModulation=PacketsPerModulation(), rxPacketsPerModulation=PacketsPerModulation(),
+                 txPacketsPerModulation=[], rxPacketsPerModulation=[],
                  txPacketsPerStatus=PacketsPerStatus()):
         self.gatewayID = id_gateway # encoded base64 standard
         self.ip = ip
