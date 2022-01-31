@@ -1,22 +1,24 @@
 import unittest
-from utils import coder, payload_util
+
+from utils import payload_util, coder
 
 
-class Test_coder(unittest.TestCase):
+class TestPayloadUtil(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print("SetUp class")
+        print("\n SetUp class")
 
     @classmethod
     def tearDownClass(cls):
-        print("TearDown class")
+        print("\n TearDown class")
 
     def setUp(self):
-        print("SetUp")
-        self.payloads = ["YKmbBwGgAQAA3s0o6XpEg709qE45mZK/hfM07NFXhiM=", "gKmbBwEANAEBhSve0Q==",
-                    "YKmbBwGgAAAAuX0joM23ehlfKcOOpnv1iqLWLyDekH8=", "gKmbBwEANAEBhSve0Q=="]
-        self.json1 = {
+        print("\n SetUp")
+
+        self.appKey = "a772a9b9c627b3a41370b8a8646e6e80"
+
+        self.json0 = {
             "mhdr": {
                 "mType": "UnconfirmedDataDown",
                 "major": "LoRaWANR1"
@@ -44,21 +46,14 @@ class Test_coder(unittest.TestCase):
             "mic": "d1578623"
         }
 
+        self.mic0 = "d1578623"
+
     def tearDown(self):
-        print("TearDown")
+        print("\n TearDown")
 
-    #Confronto tra i Payloads in base64
-    def test_encodePhyPayload(self):
-        self.assertEqual(self.payloads[0], coder.encodePhyPayloadFromJson(self.json1) )
-
-    # funziona tranne per il campo f0pts a none
-    # Confronto tra i JSON dei payload
-    def test_decodePhyPayload(self):
-        self.assertEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[0])), self.json1)
-
-    #Confronto tra i PayPayloads
-    def test_phyPayload(self):
-        self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.getPhyPayloadFromJson(self.json1))
+    def test_compute_join_request_mic(self):
+        print("\n Test Compute Join Request Mic")
+        self.assertEqual(payload_util.compute_join_request_mic(coder.getPhyPayloadFromJson(self.json0), self.appKey), self.mic0)
 
 
 if __name__ == '__main__':
