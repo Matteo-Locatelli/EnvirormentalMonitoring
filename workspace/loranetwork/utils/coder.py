@@ -29,9 +29,9 @@ def decodeFHDR(data):
     fhdr = FHDR()
     fhdr.devAddr = decodeDevAddr(data[0:4]).hex()
     fhdr.fCtrl = FCTRL(data[4:5])
-    fCnt_byte = bytearray(2)
-    fCnt_byte += data[5:7]
-    fhdr.fCnt = int.from_bytes(fCnt_byte, 'big')
+    fCnt_byte = data[5:7]
+    fCnt_byte += bytearray(2)
+    fhdr.fCnt = int.from_bytes(fCnt_byte, 'little')
     if len(data) > 7:
         fhdr.fOpts.append(Frame(base64.b64encode(data[7:])))
     return fhdr
@@ -81,6 +81,8 @@ def decode_data_payload_to_mac_commands(is_uplink, frames):
 
 def decode_fopts_payload_to_mac_commands(is_uplink, frames):
     data = []
+    if frames is None:
+        return data
     for frame in frames:
         data.append(base64.b64decode(frame.bytes))
     return decode_data_payload_to_mac_commands(is_uplink, data)
