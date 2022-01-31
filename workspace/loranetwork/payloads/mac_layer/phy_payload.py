@@ -59,7 +59,7 @@ class FCTRL:
 
     def getString(self):
         return "ADR:%02s ADRACKReq:%02s ACK:%02s ClassB:%02s FPending:%02s fOptsLen:%01x" % (
-            self.ADR, self.ADRACKReq, self.ACK, self.ClassB, self.FPending, self.fOptsLen)
+            self.adr, self.adrAckReq, self.ack, self.classB, self.fPending, self.fOptsLen)
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -70,7 +70,7 @@ class FHDR:
         self.devAddr = None
         self.fCtrl = FCTRL()
         self.fCnt = None
-        self.fOpts = []
+        self.fOpts = None
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

@@ -32,7 +32,7 @@ class Test_coder(unittest.TestCase):
                         "classB": False
                     },
                     "fCnt": 1,
-                    "fOpts": 0
+                    "fOpts": None
                 },
                 "fPort": 0,
                 "frmPayload": [
@@ -49,13 +49,11 @@ class Test_coder(unittest.TestCase):
 
 
     def test_encodePhyPayload(self):
-        self.assertNotEqual(self.payloads[0], coder.encodePhyPayloadFromJson(self.json1) ) # add assertion here
+        self.assertEqual(self.payloads[0], coder.encodePhyPayloadFromJson(self.json1) )
 
     def test_decodePhyPayload(self):
-        self.assertNotEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[0])), self.json1)
+        self.assertEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[0])), self.json1)
 
-    def test_pay_payload(self):
-        self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.encodePhyPayloadFromJson(self.json1))
 
 if __name__ == '__main__':
     unittest.main()
