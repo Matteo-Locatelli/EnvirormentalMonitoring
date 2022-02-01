@@ -150,10 +150,10 @@ class TestCoder(unittest.TestCase):
     # getPhyPayloadFromJson: JSON -> PhyPayload
     def test_phyPayload(self):
         print("test_payPhyloads")
-        #self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.getPhyPayloadFromJson(self.jsons[0]))
-        #self.assertEqual(coder.decodePhyPayload(self.payloads[1]), coder.getPhyPayloadFromJson(self.jsons[1]))
+        self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.getPhyPayloadFromJson(self.jsons[0]))
+        self.assertEqual(coder.decodePhyPayload(self.payloads[1]), coder.getPhyPayloadFromJson(self.jsons[1]))
         self.assertEqual(coder.decodePhyPayload(self.payloads[2]), coder.getPhyPayloadFromJson(self.jsons[2]))
-        #self.assertEqual(coder.decodePhyPayload(self.payloads[3]), coder.getPhyPayloadFromJson(self.jsons[3]))
+        self.assertEqual(coder.decodePhyPayload(self.payloads[3]), coder.getPhyPayloadFromJson(self.jsons[3]))
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ from watchdog import Watchdog
 broker = "172.30.52.14"
 port = 1883
 
-id_gateway_list = ["f23ad78a721d2334"]
+id_gateway_list = ["1f6aa45e9ed77a78"]
 devices = {
     "totalCount": "1",
     "result": [
@@ -61,7 +61,7 @@ def activate_watchdogs(watchdog_list):
     for watchdog in watchdog_list:
         resp = getDeviceKeys(watchdog.devEUI)
         watchdog.app_key = resp.device_keys.nwk_key
-        watchdog.activate()
+        watchdog.join()
 
 
 def assign_watchdogs(watchdog_list, gateway_list):
@@ -77,26 +77,26 @@ def assign_watchdogs(watchdog_list, gateway_list):
 
 
 def main():
-    try:
-        gateway_list = []
-        gateway = EdgeNode(broker, port, id_gateway_list[0])
-        gateway_list.append(gateway)
-        gateway.start_connection()
-        gateway.subscribe()
-        gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
-        gateway.stats_publish()
-        watchdog_list = []
-        for device in devices['result']:
-            watchdog_list.append(Watchdog(applicationID=device['applicationID'], deviceName=device['name'],
-                                          deviceProfileID=device['deviceProfileID'], devEUI=device['devEUI'],
-                                          batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
-        assign_watchdogs(watchdog_list, gateway_list)
-        activate_watchdogs(watchdog_list)
-        time.sleep(10)
-    except BaseException as err:
-        gateway.close_connection()
-        print("Something went wrong!")
-        print("Error: ", str(err))
+    gateway_list = []
+    gateway = EdgeNode(broker, port, id_gateway_list[0])
+    gateway_list.append(gateway)
+    gateway.start_connection()
+    gateway.subscribe()
+    gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
+    gateway.stats_publish()
+    watchdog_list = []
+    for device in devices['result']:
+        watchdog_list.append(Watchdog(applicationID=device['applicationID'], deviceName=device['name'],
+                                      deviceProfileID=device['deviceProfileID'], devEUI=device['devEUI'],
+                                      batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
+    assign_watchdogs(watchdog_list, gateway_list)
+    activate_watchdogs(watchdog_list)
+    finish = 1
+    while finish != "0":
+        finish = input("0 per terminare")
+        time.sleep(1)
+
+    gateway.close_connection()
 
 
 if __name__ == "__main__":

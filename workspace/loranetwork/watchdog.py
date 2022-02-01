@@ -45,8 +45,9 @@ class Watchdog:
         self.app_skey = app_skey
         self.joinEUI = joinEUI
         self.gateway = None
+        self.active = False
 
-    def activate(self):
+    def join(self):
         phyPayload = PhyPayload()
         phyPayload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.getName()
         phyPayload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
@@ -69,7 +70,10 @@ class Watchdog:
                self.deviceName.__eq__(other.deviceName) and self.devEUI.__eq__(other.devEUI) and \
                self.margin.__eq__(other.margin) and self.externalPowerSource.__eq__(other.externalPowerSource) and \
                self.batteryLevelUnavailable.__eq__(other.batteryLevelUnavailable) and \
-               self.batteryLevel.__eq__(other.batteryLevel) and self.tags.__eq__(other.tags)
+               self.batteryLevel.__eq__(other.batteryLevel) and self.tags.__eq__(other.tags) and \
+               self.active.__eq__(other.active)
 
+    def activate(self, phyPayload):
+        self
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

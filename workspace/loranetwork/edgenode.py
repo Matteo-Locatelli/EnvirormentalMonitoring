@@ -5,11 +5,14 @@ import random
 from paho.mqtt.client import Client
 from datetime import datetime
 
+from downlink_message_manager import manageJoinAcceptRequest
 from enums.crc_status_enum import CRCStatusEnum
+from enums.message_type_enum import MessageTypeEnum
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
 from payloads.up_payload import UpPayload
 from utils.payload_util import getJsonFromObject
+from utils.coder import decodePhyPayload
 
 # Payload message types
 from payloads.conn_payload import ConnPayload
@@ -136,7 +139,8 @@ class EdgeNode:
         # payload setting
         randstr = str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         uplink_id = base64.b64encode(randstr.encode()).decode()
-        rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
+        rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
         join_request_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
 
         # json conversion
@@ -152,7 +156,7 @@ class EdgeNode:
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
-        self.subscribe(down_topic_to_sub)
+        self.client.subscribe(down_topic_to_sub)
 
     def close_connection(self):
         self.client.loop_stop()
@@ -180,8 +184,12 @@ class EdgeNode:
         print("Subscribed to topic ", mid)
 
     def on_message(self, client, userdata, msg):
-        print("Received message: ", msg.payload, " from topic: ", msg.topic)
-        self.can_sand_data = True
+        print("Received message: ", msg.payload.decode(), " from topic: ", msg.topic)
+        phyPayloadEncoded = json.loads(msg.payload.decode())['phyPayload']
+        phyPayload = decodePhyPayload(phyPayloadEncoded)
+        if phyPayload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
+            manageJoinAcceptRequest(self, phyPayload)
+
+        if msg.state == 0:
+            self.rxPacketsReceivedOK += 1
         self.rxPacketsReceived += 1
-        self.rxPacketsReceivedOK += 1
-        print(msg.payload.decode("utf-8"))

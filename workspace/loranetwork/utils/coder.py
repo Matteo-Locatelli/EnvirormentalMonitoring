@@ -188,9 +188,10 @@ def encodeFHDR(fhdr):
 
 
 def encodePhyPayload(phyPayload):
+    print("encodePhyPayload")
     mtype = MessageTypeEnum.findByName(phyPayload.mhdr.mType)
     data = bytearray()
-    print(" *** ", mtype.getName())
+    print(" *** encoding", mtype.getName())
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
         joinEUI = int(phyPayload.macPayload.joinEUI, 16).to_bytes(8, 'big')
@@ -247,6 +248,7 @@ def encodePhyPayloadFromJson(json_packet):
     p.mic = json_packet['mic']
     return encodePhyPayload(p)
 
+
 def getPhyPayloadFromJson(json_packet):
     p = PhyPayload()
     p.mhdr.mType = json_packet['mhdr']['mType']
@@ -259,7 +261,8 @@ def getPhyPayloadFromJson(json_packet):
     p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
     p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
     p.macPayload.fPort = json_packet['macPayload']['fPort']
-    for bytes_data in json_packet['macPayload']['frmPayload']:
-        p.macPayload.frmPayload.append(Frame(bytes_data['bytes']))
+    if json_packet['macPayload']['frmPayload'] is not None:
+        for bytes_data in json_packet['macPayload']['frmPayload']:
+            p.macPayload.frmPayload.append(Frame(bytes_data['bytes']))
     p.mic = json_packet['mic']
     return p
