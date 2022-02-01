@@ -12,8 +12,13 @@ T = TypeVar('T')
 LoRaWANR1_0 = "LoRaWANR1"
 
 
-def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
-    key = bytes.fromhex(app_key)
+def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data):
+    key = None
+    if fPort == 0:
+        key = bytes.fromhex(net_skey)
+    else:
+        key = bytes.fromhex(app_skey)
+
     pLen = len(data)
     if pLen % 16 != 0:
         data += bytearray(16 - (pLen % 16))

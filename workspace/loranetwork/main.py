@@ -91,6 +91,10 @@ def main():
                                       batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
     assign_watchdogs(watchdog_list, gateway_list)
     activate_watchdogs(watchdog_list)
+
+    for watchdog in watchdog_list:
+        watchdog.send_data()
+
     finish = 1
     while finish != "0":
         finish = input("0 per terminare")

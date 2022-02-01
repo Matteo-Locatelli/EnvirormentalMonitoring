@@ -4,7 +4,7 @@ from utils.payload_util import compute_uplink_data_mic
 
 LoRaWANR1_0 = "LoRaWANR1"
 devEUI = "0ac14aad3e6391a1"
-netSessionKey = "1D304E68533F4E51093CE8DECD79E931"
+netSessionKey = "241CC39F85BD9D7C3D0EA2F21F041995"
 appSessionKey = "34825FC676335C0A2FAD87D9187D4A4F"
 appKey = "a772a9b9c627b3a41370b8a8646e6e80"
 akk = bytearray([167, 114, 169, 185, 198, 39, 179, 164, 19, 112, 184, 168, 100, 110, 110, 128])
@@ -13,33 +13,6 @@ payloads = ["QBj/XgAACAEB1efWJyP4IQZt84BwnYItoRQB", "QBj/XgAABwEBMBBkiV4q1N23Jv5
             "YBj/XgCAAQAAQK1X20rG6SZsDFdeCKDMaCr4vNdaqw==", "gAQDAgEAAAAB4mTU9yQHTwA=",
             "QBj/XgAABQEBjEq4EVxLInTagRIUG7WsR5Hz"]
 
-testPhy = {
-    "mhdr": {
-        "mType": "ConfirmedDataUp",
-        "major": "LoRaWANR1"
-    },
-    "macPayload": {
-        "fhdr": {
-            "devAddr": "01020304",
-            "fCtrl": {
-                "adr": False,
-                "adrAckReq": False,
-                "ack": False,
-                "fPending": False,
-                "classB": False
-            },
-            "fCnt": 0
-        },
-        "fPort": 0,
-        "frmPayload": [
-            {
-                "bytes": "4mTU9w=="
-            }
-        ]
-    },
-    "mic": "e117d2c0"
-}
-
-phy_payload_byte = data = base64.b64decode("gJu1wwAAOAEB3uosMQ==")
-print("Expected", phy_payload_byte[-4:])
-print(compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 313, 0, 0, netSessionKey, True))
+phy_payload_byte = data = base64.b64decode("YDzW6QGgAQAAei5cHmCQYh72t2aRhxG8qMta/wrr5o0=")
+print("Expected", phy_payload_byte[-4:].hex())
+print(compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 1, 0, 0, netSessionKey, False))

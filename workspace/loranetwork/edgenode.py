@@ -133,7 +133,7 @@ class EdgeNode:
         else:
             print(f"Failed to send message to topic {stats_topic}")
 
-    def join_request_publish(self, phy_payload):
+    def up_link_publish(self, phy_payload):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
@@ -141,11 +141,11 @@ class EdgeNode:
         uplink_id = base64.b64encode(randstr.encode()).decode()
         rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                         crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
-        join_request_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
+        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
 
         # json conversion
-        json_join_request_payload = getJsonFromObject(join_request_payload)
-        message = json.dumps(json_join_request_payload)
+        json_up_link_payload = getJsonFromObject(up_link_payload)
+        message = json.dumps(json_up_link_payload)
 
         result = self.client.publish(up_topic, message)
         status = result[0]

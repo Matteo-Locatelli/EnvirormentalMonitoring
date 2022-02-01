@@ -23,6 +23,7 @@ class Tags:
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
+#def getRandomData():
 
 class Watchdog:
     def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
@@ -49,6 +50,9 @@ class Watchdog:
         self.dev_nonce = None
         self.gateway = None
         self.active = False
+        self.fCntUp = 0 # da incrementare ad ogni invio
+        self.fCntDown = 0 # da incrementare ogni ricezione
+        self.data = []
 
     def join(self):
         phyPayload = PhyPayload()
@@ -62,7 +66,11 @@ class Watchdog:
         phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
         phyPayload.mic = compute_join_request_mic(phyPayloadByte, self.app_key)
         phyPayload_encoded = encodePhyPayload(phyPayload)
-        self.gateway.join_request_publish(phyPayload_encoded)
+        self.gateway.up_link_publish(phyPayload_encoded)
+
+    def send_data(self):
+        if self.active:
+            #può mandare dati, altrimenti NO
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):

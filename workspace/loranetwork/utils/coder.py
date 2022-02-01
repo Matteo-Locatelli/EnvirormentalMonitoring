@@ -148,7 +148,7 @@ def decode_frm_payload_to_mac_commands(app_key, is_uplink, dev_addr, fCnt, frame
     for frame in frames:
         data.append(bytearray(base64.b64decode(frame.bytes)))
 
-    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'big'))
+    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
     encrypted_data = []
     for d in data:
         encrypted_data.append(encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, d))
