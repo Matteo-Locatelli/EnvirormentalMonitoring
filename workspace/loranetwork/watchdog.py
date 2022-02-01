@@ -6,8 +6,8 @@ from payloads.mac_layer.phy_payload import PhyPayload
 import random
 import base64
 
-from utils.coder import encodePhyPayload
-from utils.payload_util import compute_join_request_mic
+from utils.coder import encodePhyPayload, decode_join_accept_mac_payload
+from utils.payload_util import compute_join_request_mic, getJsonFromObject
 
 
 class Tags:
@@ -44,6 +44,9 @@ class Watchdog:
         self.net_skey = net_skey
         self.app_skey = app_skey
         self.joinEUI = joinEUI
+        self.app_nonce = None
+        self.net_ID = None
+        self.dev_nonce = None
         self.gateway = None
         self.active = False
 
@@ -53,7 +56,8 @@ class Watchdog:
         phyPayload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
         phyPayload.macPayload.devEUI = self.devEUI
         phyPayload.macPayload.joinEUI = self.joinEUI
-        phyPayload.macPayload.devNonce = random.randint(10000, 30000)
+        self.dev_nonce = random.randint(10000, 30000)
+        phyPayload.macPayload.devNonce = self.dev_nonce
         phyPayload.mic = "0"
         phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
         phyPayload.mic = compute_join_request_mic(phyPayloadByte, self.app_key)
@@ -74,6 +78,13 @@ class Watchdog:
                self.active.__eq__(other.active)
 
     def activate(self, phyPayload):
-        self
+        join_accept_mac_payload = decode_join_accept_mac_payload(self.app_key, self.dev_nonce, phyPayload)
+        self.net_skey = join_accept_mac_payload.nwk_SKey
+        self.app_skey = join_accept_mac_payload.app_SKey
+        self.app_nonce = join_accept_mac_payload.app_nonce
+        self.net_ID = join_accept_mac_payload.net_ID
+        print(getJsonFromObject(join_accept_mac_payload))
+        self.active = True
+
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

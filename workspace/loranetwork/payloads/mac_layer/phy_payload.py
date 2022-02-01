@@ -92,7 +92,7 @@ class FHDR:
         return self.devAddr.__eq__(other.devAddr) and self.fCtrl.__eq__(other.fCtrl) and \
                self.fCnt.__eq__(other.fCnt) and self.fOpts.__eq__(other.fOpts)
 
-    def toJSON(self):
+    def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
 

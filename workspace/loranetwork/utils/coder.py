@@ -3,10 +3,13 @@ import struct
 
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
-from payloads.mac_layer.mac_payload import MacCommandItem, MacCommandPayload
+from payloads.mac_layer.join_accept_mac_payload import JoinAccpetMacPayload
+from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import *
 from enums.message_type_enum import MessageTypeEnum
-from utils.payload_util import encrypt_frm_payload
+from utils.payload_util import encrypt_frm_payload, encrypt_mac_payload
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 
 
 def MType(byte):
@@ -15,6 +18,10 @@ def MType(byte):
 
 def Major(byte):
     return struct.unpack("B", byte)[0] & 0x03
+
+
+def decodeNetID(data):
+    return data[::-1]
 
 
 def decodeDevAddr(data):
@@ -35,6 +42,18 @@ def decodeFHDR(data):
     if len(data) > 7:
         fhdr.fOpts.append(Frame(base64.b64encode(data[7:])))
     return fhdr
+
+
+def encodeDevAddr(data):
+    return data[::+1]
+
+
+def encodeFHDR(fhdr):
+    byte = bytearray()
+    byte += encodeDevAddr(int(fhdr.devAddr, 16).to_bytes(4, 'little'))
+    byte += fhdr.fCtrl.getByte()
+    byte += fhdr.fCnt.to_bytes(2, 'little')
+    return byte
 
 
 def get_command_payload(command_type, data):
@@ -77,6 +96,42 @@ def decode_data_payload_to_mac_commands(is_uplink, frames):
         i = i + 1 + payloadLenght
 
     return mac_command_payload_list
+
+
+# functions
+
+def decode_join_accept_mac_payload(app_key, dev_nonce, phyPayload):
+
+    join_accept_mac_payload = JoinAccpetMacPayload()
+    mac_payload_byte_encrypted = base64.b64decode(phyPayload.macPayload.bytes)
+    mic_encrypted = bytes.fromhex(phyPayload.mic)
+    key = bytes.fromhex(app_key)
+    mac_payload_byte = encrypt_mac_payload(app_key, mac_payload_byte_encrypted, mic_encrypted)
+
+    join_accept_mac_payload.app_nonce = int.from_bytes(mac_payload_byte[0:3], 'little')
+    join_accept_mac_payload.net_ID = decodeNetID(mac_payload_byte[3:6]).hex()
+    join_accept_mac_payload.dev_addr = decodeDevAddr(mac_payload_byte[6:10]).hex()
+    join_accept_mac_payload.DL_settings = mac_payload_byte[10:11].hex()
+    join_accept_mac_payload.rx_delay = mac_payload_byte[11]
+    join_accept_mac_payload.CF_list = base64.b64encode(mac_payload_byte[12:]).decode()
+
+    # computing network e app sessione keys
+
+    n = bytearray(16)
+    a = bytearray(16)
+    n[0] = 1
+    n[1:4] = mac_payload_byte[0:3]
+    n[4:7] = mac_payload_byte[3:6]
+    n[7:9] = dev_nonce.to_bytes(2, 'little')
+    a[0] = 2
+    a[1:4] = mac_payload_byte[0:3]
+    a[4:7] = mac_payload_byte[3:6]
+    a[7:9] = dev_nonce.to_bytes(2, 'little')
+
+    cipher = AES.new(key, AES.MODE_ECB)
+    join_accept_mac_payload.nwk_SKey = cipher.encrypt(n).hex()
+    join_accept_mac_payload.app_SKey = cipher.encrypt(a).hex()
+    return join_accept_mac_payload
 
 
 def decode_fopts_payload_to_mac_commands(is_uplink, frames):
@@ -157,7 +212,8 @@ def decodePhyPayload(phy_payload_encoded):
         macPayload.fhdr = decodeFHDR(macPayloadByte[0:7 + fCtrl.fOptsLen])
         macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
         if len(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:]) > 0:
-            macPayload.frmPayload.append(Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
+            macPayload.frmPayload.append(
+                Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
 
         phyPayload.macPayload = macPayload
         phyPayload.mic = mic.hex()
@@ -174,18 +230,6 @@ def decodePhyPayload(phy_payload_encoded):
         print("Unsupported type")
 
     return phyPayload
-
-
-def encodeDevAddr(data):
-    return data[::+1]
-
-
-def encodeFHDR(fhdr):
-    byte = bytearray()
-    byte += encodeDevAddr(int(fhdr.devAddr, 16).to_bytes(4, 'little'))
-    byte += fhdr.fCtrl.getByte()
-    byte += fhdr.fCnt.to_bytes(2, 'little')
-    return byte
 
 
 def encodePhyPayload(phyPayload):

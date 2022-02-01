@@ -5,6 +5,8 @@ from Crypto.Hash import CMAC
 from Crypto.Cipher import AES
 from typing import TypeVar
 
+from Crypto.Util.Padding import pad
+
 T = TypeVar('T')
 
 LoRaWANR1_0 = "LoRaWANR1"
@@ -12,7 +14,6 @@ LoRaWANR1_0 = "LoRaWANR1"
 
 def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
     key = bytes.fromhex(app_key)
-    # key = app_key
     pLen = len(data)
     if pLen % 16 != 0:
         data += bytearray(16 - (pLen % 16))
@@ -46,7 +47,63 @@ def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
     return data[0:pLen]
 
 
+def encrypt_mac_payload(app_key, mac_payload, mic):
+    key = bytes.fromhex(app_key)
+    ciphertext = bytearray()
+    ciphertext += mac_payload
+    ciphertext += mic
+
+    if len(ciphertext) % 16 != 0:
+        raise Exception("lorawan: plaintext must be a multiple of 16 bytes")
+
+    cipher = AES.new(key, AES.MODE_ECB)
+
+    text = bytearray(len(ciphertext))
+    i = 0
+    while i < len(ciphertext) / 16:
+        offset = i * 16
+        text[offset: offset + 16] = cipher.encrypt(ciphertext[offset:offset + 16])
+        i += 1
+
+    # phyPayload.mic = text[-4:].hex()
+    return text[0:-4]
+
+
 def compute_join_request_mic(phy_payload, app_key):
+    key = bytes.fromhex(app_key)
+    mic = bytearray(4)
+    mhdr = phy_payload[0:1]
+    mac_payload = encrypt_mac_payload(app_key, phy_payload[1:-4], phy_payload[-4:])
+    mic_bytes = bytearray()
+    mic_bytes += mhdr
+    mic_bytes += mac_payload
+
+    ap_mic = CMAC.new(key, ciphermod=AES)
+    ap_mic.update(mic_bytes)
+
+    mic[:] = ap_mic.digest()[0:4]
+
+    text = bytearray()
+    text += mac_payload
+    text += mic
+
+    if len(text) % 16 != 0:
+        raise Exception("lorawan: plaintext must be a multiple of 16 bytes")
+
+    cipher = AES.new(key, AES.MODE_ECB)
+
+    ciphertext = bytearray(len(text))
+    i = 0
+    while i < len(ciphertext) / 16:
+        offset = i * 16
+        ciphertext[offset: offset + 16] = cipher.decrypt(text[offset:offset + 16])
+        i += 1
+
+    mic_enc = ciphertext[-4:]
+    return mic_enc.hex()
+
+
+def compute_join_accpet_mic(phy_payload, app_key):
     key = bytes.fromhex(app_key)
     mic = bytearray(4)
     mhdr = phy_payload[0:1]
