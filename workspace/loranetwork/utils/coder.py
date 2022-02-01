@@ -284,16 +284,23 @@ def getPhyPayloadFromJson(json_packet):
     p = PhyPayload()
     p.mhdr.mType = json_packet['mhdr']['mType']
     p.mhdr.major = json_packet['mhdr']['major']
-    p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
-    p.macPayload.fhdr.fCtrl.ADR = json_packet['macPayload']['fhdr']['fCtrl']['adr']
-    p.macPayload.fhdr.fCtrl.ADRACKReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
-    p.macPayload.fhdr.fCtrl.ACK = json_packet['macPayload']['fhdr']['fCtrl']['ack']
-    p.macPayload.fhdr.fCtrl.FPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
-    p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
-    p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
-    p.macPayload.fPort = json_packet['macPayload']['fPort']
-    if json_packet['macPayload']['frmPayload'] is not None:
-        for bytes_data in json_packet['macPayload']['frmPayload']:
-            p.macPayload.frmPayload.append(Frame(bytes_data['bytes']))
+    if p.mhdr.mType == MessageTypeEnum.JOIN_REQUEST.getName():
+        p.macPayload.joinEUI = json_packet['macPayload']['joinEUI']
+        p.macPayload.devEUI = json_packet['macPayload']['devEUI']
+        p.macPayload.devNonce = json_packet['macPayload']['devNonce']
+    elif p.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
+        p.macPayload.bytes = json_packet['macPayload']['bytes']
+    else:
+        p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
+        p.macPayload.fhdr.fCtrl.ADR = json_packet['macPayload']['fhdr']['fCtrl']['adr']
+        p.macPayload.fhdr.fCtrl.ADRACKReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
+        p.macPayload.fhdr.fCtrl.ACK = json_packet['macPayload']['fhdr']['fCtrl']['ack']
+        p.macPayload.fhdr.fCtrl.FPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
+        p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
+        p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
+        p.macPayload.fPort = json_packet['macPayload']['fPort']
+        if json_packet['macPayload']['frmPayload'] is not None:
+            for bytes_data in json_packet['macPayload']['frmPayload']:
+                p.macPayload.frmPayload.append(Frame(bytes_data['bytes']))
     p.mic = json_packet['mic']
     return p
