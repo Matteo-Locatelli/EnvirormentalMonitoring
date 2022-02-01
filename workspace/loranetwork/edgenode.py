@@ -185,10 +185,9 @@ class EdgeNode:
 
     def on_message(self, client, userdata, msg):
         print("Received message: ", msg.payload.decode(), " from topic: ", msg.topic)
-        phyPayloadEncoded = json.loads(msg.payload.decode())['phyPayload']
-        phyPayload = decodePhyPayload(phyPayloadEncoded)
-        if phyPayload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
-            manageJoinAcceptRequest(self, phyPayload)
+        phyPayload = json.loads(msg.payload.decode())['phyPayload']
+        for watchdog in self.watchdogs:
+            watchdog.receive_message(phyPayload)
 
         if msg.state == 0:
             self.rxPacketsReceivedOK += 1

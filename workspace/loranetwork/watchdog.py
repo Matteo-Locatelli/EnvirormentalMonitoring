@@ -1,7 +1,10 @@
 import json
 
+from downlink_message_manager import manageJoinAcceptRequest, check_message
+from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
+from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import PhyPayload
 import random
 import base64
@@ -50,6 +53,7 @@ class Watchdog:
         self.dev_nonce = None
         self.gateway = None
         self.active = False
+        self.dev_addr = None
         self.fCntUp = 0 # da incrementare ad ogni invio
         self.fCntDown = 0 # da incrementare ogni ricezione
         self.data = []
@@ -91,8 +95,21 @@ class Watchdog:
         self.app_skey = join_accept_mac_payload.app_SKey
         self.app_nonce = join_accept_mac_payload.app_nonce
         self.net_ID = join_accept_mac_payload.net_ID
+        self.dev_addr = join_accept_mac_payload.dev_addr
         print(getJsonFromObject(join_accept_mac_payload))
         self.active = True
+
+    def receive_message(self, phyPayload):
+        check_message(self, phyPayload)
+
+    def send_device_status(self):
+        mac_command = MacCommandItem()
+        mac_command_payload = MacCommandPayload()
+        mac_command_payload.margin = self.margin
+        mac_command_payload.battery = self.batteryLevel
+        mac_command.payload = mac_command_payload
+        mac_command.cid = MacCommandEnum.DEVICE_STATUS_ANS.getName()
+        
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

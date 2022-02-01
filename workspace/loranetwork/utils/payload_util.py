@@ -125,7 +125,7 @@ def compute_join_request_mic(phy_payload, app_key):
     return mic.hex()
 
 
-def compute_uplink_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey, is_uplink):
+def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey, is_uplink):
     mic = bytearray(4)
     key = bytes.fromhex(fNwkSIntKey)
     sNwkSIntKey = bytearray(16)

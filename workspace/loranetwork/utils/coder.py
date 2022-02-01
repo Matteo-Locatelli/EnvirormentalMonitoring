@@ -98,10 +98,54 @@ def decode_data_payload_to_mac_commands(is_uplink, frames):
     return mac_command_payload_list
 
 
+def encode_mac_payload(cid, mac_command):
+    b = bytearray(cid.getPayloadLenght() + 1)
+    b[0] = cid.getKey()
+    mac_command_payload = mac_command.payload
+    if cid == MacCommandEnum.DEVICE_STATUS_REQ:
+        pass
+    elif cid == MacCommandEnum.DEVICE_STATUS_ANS:
+        if mac_command_payload.margin < -32:
+            raise Exception("lorawan: min value of Margin is -32")
+        if mac_command_payload.margin > 31:
+            raise Exception("lorawan: max value of Margin is 31")
+        b[1] = mac_command_payload.battery
+        if mac_command_payload.margin < 0:
+            b[2] = 64 + mac_command_payload.margin
+        else:
+            b[2] = mac_command_payload.margin
+    elif cid == MacCommandEnum.NEW_CHANNEL_REQ:
+        if mac_command_payload.freq / 100 >= 16777216:
+            raise Exception("lorawan: max value of Freq is 2^24 - 1")
+        if mac_command_payload.freq % 100 != 0:
+            raise Exception("lorawan: Freq must be a multiple of 100")
+        if mac_command_payload.maxDR > 15:
+            raise Exception("lorawan: max value of MaxDR is 15")
+        if mac_command_payload.minDR > 15:
+            raise Exception("lorawan: max value of MinDR is 15")
+
+        b[1] = mac_command_payload.chIndex
+        b[2:5] = int(mac_command_payload.freq/100).to_bytes(3, 'little')
+        b[5] = mac_command_payload.minDR ^ (mac_command_payload.maxDR << 4)
+    else:
+        raise Exception("Not managed command type")
+
+    return b
+
+
+def encode_mac_commands_to_data_payload(is_uplink, mac_commands):
+    data = bytearray()
+    for mac_command in mac_commands:
+        cid = MacCommandEnum.findByName(mac_command.cid, is_uplink)
+        mac_payload_encoded = encode_mac_payload(cid, mac_command)
+        data += mac_payload_encoded
+
+    return data
+
+
 # functions
 
 def decode_join_accept_mac_payload(app_key, dev_nonce, phyPayload):
-
     join_accept_mac_payload = JoinAccpetMacPayload()
     mac_payload_byte_encrypted = base64.b64decode(phyPayload.macPayload.bytes)
     mic_encrypted = bytes.fromhex(phyPayload.mic)
@@ -143,17 +187,26 @@ def decode_fopts_payload_to_mac_commands(is_uplink, frames):
     return decode_data_payload_to_mac_commands(is_uplink, data)
 
 
-def decode_frm_payload_to_mac_commands(app_key, is_uplink, dev_addr, fCnt, frames):
+def decode_frm_payload_to_mac_commands(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, frames):
     data = []
     for frame in frames:
         data.append(bytearray(base64.b64decode(frame.bytes)))
 
     dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
+
     encrypted_data = []
     for d in data:
-        encrypted_data.append(encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, d))
+        encrypted_data.append(encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, d))
 
     return decode_data_payload_to_mac_commands(is_uplink, encrypted_data)
+
+
+def encode_mac_commands_to_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, mac_commands):
+    data = encode_mac_commands_to_data_payload(is_uplink, mac_commands)
+
+    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
+    encrypted_data = encrypt_frm_payload(app_skey, net_skey, is_uplink, fPort, dev_addr_byte, fCnt, data)
+    return base64.b64encode(encrypted_data).decode()
 
 
 def decodePhyPayload(phy_payload_encoded):
