@@ -110,6 +110,10 @@ class TestPayloadUtil(unittest.TestCase):
             payload_util.compute_uplink_data_mic(base64.b64decode(self.payload_compute_uplink), self.LoRaWANR1_0, 308, 0, 0,
                                                  self.appKey), self.mic_compute_uplink)
 
+    def test_compute_join_accept_mic(self):
+        print("\n Test Compute Join Accept Mic")
+        # self.assertEqual("PhyPayload in hex", self.appKey)
+
 
 if __name__ == '__main__':
     unittest.main()
