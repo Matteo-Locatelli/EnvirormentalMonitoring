@@ -69,7 +69,7 @@ def encrypt_mac_payload(app_key, mac_payload, mic):
     return text[0:-4]
 
 
-def compute_join_accpet_mic(phy_payload, app_key):
+def compute_join_accept_mic(phy_payload, app_key):
     key = bytes.fromhex(app_key)
     mic = bytearray(4)
     mhdr = phy_payload[0:1]

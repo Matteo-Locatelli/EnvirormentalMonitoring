@@ -1,6 +1,6 @@
 import base64
 import unittest
-from utils import payload_util, coder
+from utils import payload_util
 
 
 class TestPayloadUtil(unittest.TestCase):
@@ -18,8 +18,6 @@ class TestPayloadUtil(unittest.TestCase):
 
         self.appKey = "a772a9b9c627b3a41370b8a8646e6e80"
         self.LoRaWANR1_0 = "LoRaWANR1"
-        self.devEUI = "0ac14aad3e6391a1"
-        self.netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
 
         # Join request
         self.payload_join_request = "AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI="
@@ -90,6 +88,7 @@ class TestPayloadUtil(unittest.TestCase):
         # Mic join accept
         self.mic_join_accept = self.json_join_accept['mic']
 
+
     def tearDown(self):
         print("\n TearDown")
 
@@ -110,9 +109,14 @@ class TestPayloadUtil(unittest.TestCase):
             payload_util.compute_uplink_data_mic(base64.b64decode(self.payload_compute_uplink), self.LoRaWANR1_0, 308, 0, 0,
                                                  self.appKey), self.mic_compute_uplink)
 
+    # Comparison between the mic in the JSON object and the mic computed by the function compute_join_accept_mic
+    # @ Parameters: appKey: static
+    # @ Parameter: payload_join_accept converted in hexadecimal number with b64decode
     def test_compute_join_accept_mic(self):
         print("\n Test Compute Join Accept Mic")
-        # self.assertEqual("PhyPayload in hex", self.appKey)
+        self.assertEqual(
+            payload_util.compute_join_accept_mic(base64.b64decode(self.payload_join_accept), self.appKey),
+            self.mic_join_accept)
 
 
 if __name__ == '__main__':
