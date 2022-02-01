@@ -1,5 +1,5 @@
+import base64
 import unittest
-
 from utils import payload_util, coder
 
 
@@ -17,43 +17,98 @@ class TestPayloadUtil(unittest.TestCase):
         print("\n SetUp")
 
         self.appKey = "a772a9b9c627b3a41370b8a8646e6e80"
+        self.LoRaWANR1_0 = "LoRaWANR1"
+        self.devEUI = "0ac14aad3e6391a1"
+        self.netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
 
-        self.json0 = {
+        # Join request
+        self.payload_join_request = "AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI="
+
+        # Join accept
+        self.payload_join_accept = "IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw"
+
+        # Compute uplink
+        self.payload_compute_uplink = "gKmbBwEANAEBhSve0Q=="
+
+        # Payload join request
+        self.json_join_request = {
             "mhdr": {
-                "mType": "UnconfirmedDataDown",
+                "mType": "JoinRequest",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "joinEUI": "0000000000000000",
+                "devEUI": "0ac14aad3e6391a1",
+                "devNonce": 52511
+            },
+            "mic": "df6acd12"
+        }
+
+        # Payload join accept
+        self.json_join_accept = {
+            "mhdr": {
+                "mType": "JoinAccept",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "bytes": "oZPZ8Uc4VjdXXtWmyVtLP515ZXTlcnBE+2Lniw=="
+            },
+            "mic": "e60fa370"
+        }
+
+        # Payload compute uplink
+        self.json_compute_uplink = {
+            "mhdr": {
+                "mType": "ConfirmedDataUp",
                 "major": "LoRaWANR1"
             },
             "macPayload": {
                 "fhdr": {
                     "devAddr": "01079ba9",
                     "fCtrl": {
-                        "adr": True,
+                        "adr": False,
                         "adrAckReq": False,
-                        "ack": True,
+                        "ack": False,
                         "fPending": False,
                         "classB": False
                     },
-                    "fCnt": 1,
+                    "fCnt": 308,
                     "fOpts": None
                 },
-                "fPort": 0,
-                "frmPayload": [
-                    {
-                        "bytes": "3s0o6XpEg709qE45mZK/hfM07A=="
-                    }
-                ]
+                "fPort": 1,
+                "frmPayload": None
             },
-            "mic": "d1578623"
+            "mic": "852bded1"
         }
 
-        self.mic0 = "d1578623"
+        # Mic compute uplink
+        self.mic_compute_uplink = self.json_compute_uplink['mic']
+
+        # Mic join request
+        self.mic_join_request = self.json_join_request['mic']
+
+        # Mic join accept
+        self.mic_join_accept = self.json_join_accept['mic']
 
     def tearDown(self):
         print("\n TearDown")
 
+    # Comparison between the mic in the JSON object and the mic computed by the function compute_join_request_mic
+    # @ Parameters: appKey: static
+    # @ Parameter: payload_join_request converted in hexadecimal number with b64decode
     def test_compute_join_request_mic(self):
         print("\n Test Compute Join Request Mic")
-        self.assertEqual(payload_util.compute_join_request_mic(coder.getPhyPayloadFromJson(self.json0), self.appKey), self.mic0)
+        self.assertEqual(
+            payload_util.compute_join_request_mic(base64.b64decode(self.payload_join_request), self.appKey),
+            self.mic_join_request)
+        # self.assertNotEqual(payload_util.compute_join_request_mic(base64.b64decode(self.payload_join_accept), self.appKey),self.mic_join_accept)
+
+    # @ Parameter: payload_join_request converted in hexadecimal number with b64decode
+    def test_compute_uplink_data_mic(self):
+        print("\n Test Compute Uplink Data Mic")
+        self.assertEqual(
+            payload_util.compute_uplink_data_mic(base64.b64decode(self.payload_compute_uplink), self.LoRaWANR1_0, 308, 0, 0,
+                                                 self.appKey), self.mic_compute_uplink)
 
 
 if __name__ == '__main__':
