@@ -4,7 +4,10 @@ from utils.payload_util import compute_uplink_data_mic
 
 LoRaWANR1_0 = "LoRaWANR1"
 devEUI = "0ac14aad3e6391a1"
-netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
+netSessionKey = "1D304E68533F4E51093CE8DECD79E931"
+appSessionKey = "34825FC676335C0A2FAD87D9187D4A4F"
+appKey = "a772a9b9c627b3a41370b8a8646e6e80"
+akk = bytearray([167, 114, 169, 185, 198, 39, 179, 164, 19, 112, 184, 168, 100, 110, 110, 128])
 
 payloads = ["QBj/XgAACAEB1efWJyP4IQZt84BwnYItoRQB", "QBj/XgAABwEBMBBkiV4q1N23Jv5I3sAE4x3y",
             "YBj/XgCAAQAAQK1X20rG6SZsDFdeCKDMaCr4vNdaqw==", "gAQDAgEAAAAB4mTU9yQHTwA=",
@@ -37,5 +40,6 @@ testPhy = {
     "mic": "e117d2c0"
 }
 
-phy_payload_byte = data = base64.b64decode(encodePhyPayloadFromJson(testPhy))
-compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 0, 0, 0, netSessionKey)
+phy_payload_byte = data = base64.b64decode("gJu1wwAAOAEB3uosMQ==")
+print("Expected", phy_payload_byte[-4:])
+print(compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 313, 0, 0, netSessionKey, True))

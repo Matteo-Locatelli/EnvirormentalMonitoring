@@ -141,3 +141,63 @@ AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI=
             "mic": "df6acd12"
         }
     }
+
+
+**************** TEST MIC *********************
+net_sess = "241CC39F85BD9D7C3D0EA2F21F041995"
+
+payload1
+"YDzW6QGgAQAAei5cHmCQYh72t2aRhxG8qMta/wrr5o0="
+"phyPayload": {
+            "mhdr": {
+                "mType": "UnconfirmedDataDown",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01e9d63c",
+                    "fCtrl": {
+                        "adr": true,
+                        "adrAckReq": false,
+                        "ack": true,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 1,
+                    "fOpts": null
+                },
+                "fPort": 0,
+                "frmPayload": [
+                    {
+                        "bytes": "ei5cHmCQYh72t2aRhxG8qMta/w=="
+                    }
+                ]
+            },
+            "mic": "0aebe68d"
+        }
+
+payload2
+"gDzW6QEAOQEBlYT5Kg=="
+"phyPayload": {
+            "mhdr": {
+                "mType": "ConfirmedDataUp",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01e9d63c",
+                    "fCtrl": {
+                        "adr": false,
+                        "adrAckReq": false,
+                        "ack": false,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 313,
+                    "fOpts": null
+                },
+                "fPort": 1,
+                "frmPayload": null
+            },
+            "mic": "9584f92a"
+        }
