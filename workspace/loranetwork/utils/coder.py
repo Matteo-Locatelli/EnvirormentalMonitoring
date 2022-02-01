@@ -156,8 +156,8 @@ def decodePhyPayload(phy_payload_encoded):
         fCtrl = FCTRL(macPayloadByte[4:5])
         macPayload.fhdr = decodeFHDR(macPayloadByte[0:7 + fCtrl.fOptsLen])
         macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
-
-        macPayload.frmPayload.append(Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
+        if len(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:]) > 0:
+            macPayload.frmPayload.append(Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
 
         phyPayload.macPayload = macPayload
         phyPayload.mic = mic.hex()
@@ -167,7 +167,8 @@ def decodePhyPayload(phy_payload_encoded):
         print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
         print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
         print("  fCnt: %05d   fPort: %01x" % (phyPayload.macPayload.fhdr.fCnt, phyPayload.macPayload.fPort))
-        print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
+        if len(phyPayload.macPayload.frmPayload) > 0:
+            print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
         print("  mic: %04s " % phyPayload.mic)
     else:
         print("Unsupported type")
@@ -232,21 +233,7 @@ def encodePhyPayload(phyPayload):
 
 
 def encodePhyPayloadFromJson(json_packet):
-    p = PhyPayload()
-    p.mhdr.mType = json_packet['mhdr']['mType']
-    p.mhdr.major = json_packet['mhdr']['major']
-    p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
-    p.macPayload.fhdr.fCtrl.ADR = json_packet['macPayload']['fhdr']['fCtrl']['adr']
-    p.macPayload.fhdr.fCtrl.ADRACKReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
-    p.macPayload.fhdr.fCtrl.ACK = json_packet['macPayload']['fhdr']['fCtrl']['ack']
-    p.macPayload.fhdr.fCtrl.FPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
-    p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
-    p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
-    p.macPayload.fPort = json_packet['macPayload']['fPort']
-    for bytes_data in json_packet['macPayload']['frmPayload']:
-        p.macPayload.frmPayload.append(Frame(bytes_data['bytes']))
-    p.mic = json_packet['mic']
-    return encodePhyPayload(p)
+    return encodePhyPayload(getPhyPayloadFromJson(json_packet))
 
 
 def getPhyPayloadFromJson(json_packet):
