@@ -69,7 +69,7 @@ def encrypt_mac_payload(app_key, mac_payload, mic):
     return text[0:-4]
 
 
-def compute_join_request_mic(phy_payload, app_key):
+def compute_join_accpet_mic(phy_payload, app_key):
     key = bytes.fromhex(app_key)
     mic = bytearray(4)
     mhdr = phy_payload[0:1]
@@ -103,7 +103,7 @@ def compute_join_request_mic(phy_payload, app_key):
     return mic_enc.hex()
 
 
-def compute_join_accpet_mic(phy_payload, app_key):
+def compute_join_request_mic(phy_payload, app_key):
     key = bytes.fromhex(app_key)
     mic = bytearray(4)
     mhdr = phy_payload[0:1]
@@ -128,8 +128,8 @@ def compute_uplink_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwk
     mac_payload = phy_payload[1:-4]
     fhdr = mac_payload[0:7]
 
-    # confFCnt set to 0when there are no ack
-    if not (int.from_bytes(fhdr[4:5], 'big') & 0x20) != 0:
+    # confFCnt set to 0 when there are no ack
+    if not (int.from_bytes(fhdr[4:5], 'big') & 0x20) != 0 or mac_version == LoRaWANR1_0:
         confFCnt = 0
 
     confFCnt = confFCnt % (1 << 16)
@@ -167,10 +167,13 @@ def compute_uplink_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwk
     b1[4] = txCh
 
     fn_mic = CMAC.new(key, ciphermod=AES)
+    #fn_mic.update(b0)
     fn_mic.update(mic_bytes)
     if mac_version == LoRaWANR1_0:
         mic[:] = fn_mic.digest()[0:4]
 
+    cipher = AES.new(key, AES.MODE_ECB)
+    print(cipher.encrypt(fn_mic.digest())[0:4].hex())
     return mic.hex()
 
 
