@@ -19,7 +19,6 @@ def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
 
     cipher = AES.new(key, AES.MODE_ECB)
 
-
     a = bytearray(16)
     a[0] = 0x01
     if not is_uplink:
@@ -35,7 +34,6 @@ def encrypt_frm_payload(app_key, is_uplink, dev_addr_byte, fCnt, data):
     while i < len(data) / 16:
         a[15] = int(i + 1)
 
-        s = bytearray(16)
         s = cipher.encrypt(a)
 
         j = 0

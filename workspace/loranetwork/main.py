@@ -1,17 +1,18 @@
+import math
+
 from edgenode import EdgeNode
 import time
 
 from enums.connection_state_enum import ConnectionStateEnum
+from utils.api_utils import getDeviceKeys
+from watchdog import Watchdog
 
 # broker address
-broker = "172.30.33.54"
+broker = "172.30.52.14"
 port = 1883
 
-appKey = "a772a9b9c627b3a41370b8a8646e6e80"
-appSKey = "880d2a5d7869a9e2f26989a1ab66548d"
-
 id_gateway_list = ["f23ad78a721d2334"]
-devStatus = {
+devices = {
     "totalCount": "1",
     "result": [
         {
@@ -30,13 +31,73 @@ devStatus = {
         }
     ]
 }
-gateway = EdgeNode(broker, port, id_gateway_list[0])
-try:
-    gateway.start_connection()
-    gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
-    gateway.stats_publish()
-    time.sleep(1)
-except BaseException as err:
-    gateway.close_connection()
-    print("Something went wrong!")
-    print("Error: ", str(err))
+gateways = {
+    "totalCount": "1",
+    "result": [
+        {
+            "id": "1f6aa45e9ed77a78",
+            "name": "Gateway1",
+            "description": "Gateway1 nella rete",
+            "createdAt": "2022-01-12T17:29:40.775382Z",
+            "updatedAt": "2022-01-31T09:32:22.263418Z",
+            "firstSeenAt": "2022-01-12T18:00:58.781282Z",
+            "lastSeenAt": "2022-01-31T09:32:22.261376Z",
+            "organizationID": "1",
+            "networkServerID": "8",
+            "location": {
+                "latitude": 45.64721335397582,
+                "longitude": 9.597843157441028,
+                "altitude": 0,
+                "source": "UNKNOWN",
+                "accuracy": 0
+            },
+            "networkServerName": "test-chirpstack-network-server"
+        }
+    ]
+}
+
+
+def activate_watchdogs(watchdog_list):
+    for watchdog in watchdog_list:
+        resp = getDeviceKeys(watchdog.devEUI)
+        watchdog.app_key = resp.device_keys.nwk_key
+        watchdog.activate()
+
+
+def assign_watchdogs(watchdog_list, gateway_list):
+    devices_per_gateway = math.ceil(len(watchdog_list) / len(gateway_list))
+    i = 0
+    j = 0
+    while i < len(watchdog_list):
+        watchdog_list[i].gateway = gateway_list[j]
+        gateway_list[j].watchdogs.append(watchdog_list[i])
+        i += 1
+        if i >= devices_per_gateway:
+            j += 1
+
+
+def main():
+    try:
+        gateway_list = []
+        gateway = EdgeNode(broker, port, id_gateway_list[0])
+        gateway_list.append(gateway)
+        gateway.start_connection()
+        gateway.subscribe()
+        gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
+        gateway.stats_publish()
+        watchdog_list = []
+        for device in devices['result']:
+            watchdog_list.append(Watchdog(applicationID=device['applicationID'], deviceName=device['name'],
+                                          deviceProfileID=device['deviceProfileID'], devEUI=device['devEUI'],
+                                          batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
+        assign_watchdogs(watchdog_list, gateway_list)
+        activate_watchdogs(watchdog_list)
+        time.sleep(10)
+    except BaseException as err:
+        gateway.close_connection()
+        print("Something went wrong!")
+        print("Error: ", str(err))
+
+
+if __name__ == "__main__":
+    main()

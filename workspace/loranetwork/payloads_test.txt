@@ -108,3 +108,36 @@ gKmbBwEANAEBhSve0Q==
             },
             "mic": "852bded1"
         }
+
+
+*** Join accept
+IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw
+"phyPayload": {
+            "mhdr": {
+                "mType": "JoinAccept",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "bytes": "oZPZ8Uc4VjdXXtWmyVtLP515ZXTlcnBE+2Lniw=="
+            },
+            "mic": "e60fa370"
+        }
+    }
+
+
+*** Join request
+AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI=
+
+    "phyPayload": {
+            "mhdr": {
+                "mType": "JoinRequest",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "joinEUI": "0000000000000000",
+                "devEUI": "0ac14aad3e6391a1",
+                "devNonce": 52511
+            },
+            "mic": "df6acd12"
+        }
+    }

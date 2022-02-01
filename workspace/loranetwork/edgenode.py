@@ -55,6 +55,7 @@ class EdgeNode:
         self.rxPacketsReceivedOK = 0  # Number of radio packets received with valid PHY CRC.
         self.txPacketsReceived = 0  # Number of downlink packets received for transmission.
         self.txPacketsEmitted = 0  # Number of downlink packets emitted.
+        self.watchdogs = []
 
     def start_connection(self):
         try:
@@ -129,7 +130,7 @@ class EdgeNode:
         else:
             print(f"Failed to send message to topic {stats_topic}")
 
-    def join_request_publish(self, client, phy_payload):
+    def join_request_publish(self, phy_payload):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
@@ -142,12 +143,16 @@ class EdgeNode:
         json_join_request_payload = getJsonFromObject(join_request_payload)
         message = json.dumps(json_join_request_payload)
 
-        result = client.publish(up_topic, message)
+        result = self.client.publish(up_topic, message)
         status = result[0]
         if status == 0:
             print(f"Send `{message}` to topic `{up_topic}`")
         else:
             print(f"Failed to send message to topic {up_topic}")
+
+    def subscribe(self):
+        down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
+        self.subscribe(down_topic_to_sub)
 
     def close_connection(self):
         self.client.loop_stop()

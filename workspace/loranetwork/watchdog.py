@@ -1,0 +1,75 @@
+import json
+
+from enums.major_type_enum import MajorTypeEnum
+from enums.message_type_enum import MessageTypeEnum
+from payloads.mac_layer.phy_payload import PhyPayload
+import random
+import base64
+
+from utils.coder import encodePhyPayload
+from utils.payload_util import compute_join_request_mic
+
+
+class Tags:
+    def __init__(self, ok="value"):
+        self.ok = ok
+
+    def __eq__(self, other):
+        if not isinstance(other, Tags):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.ok.__eq__(other.ok)
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
+
+
+class Watchdog:
+    def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
+                 externalPowerSource=False, batteryLevelUnavailable=False, batteryLevel=None, tags=Tags(),
+                 deviceProfileID="", deviceProfileName="", app_key="", net_skey="", app_skey="",
+                 joinEUI="0000000000000000"):
+        self.applicationID = applicationID
+        self.applicationName = applicationName
+        self.deviceName = deviceName
+        self.devEUI = devEUI
+        self.margin = margin
+        self.externalPowerSource = externalPowerSource
+        self.batteryLevelUnavailable = batteryLevelUnavailable
+        self.batteryLevel = batteryLevel
+        self.tags = tags
+        self.deviceProfileID = deviceProfileID
+        self.deviceProfileName = deviceProfileName
+        self.app_key = app_key
+        self.net_skey = net_skey
+        self.app_skey = app_skey
+        self.joinEUI = joinEUI
+        self.gateway = None
+
+    def activate(self):
+        phyPayload = PhyPayload()
+        phyPayload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.getName()
+        phyPayload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        phyPayload.macPayload.devEUI = self.devEUI
+        phyPayload.macPayload.joinEUI = self.joinEUI
+        phyPayload.macPayload.devNonce = random.randint(10000, 30000)
+        phyPayload.mic = "0"
+        phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
+        phyPayload.mic = compute_join_request_mic(phyPayloadByte, self.app_key)
+        phyPayload_encoded = encodePhyPayload(phyPayload)
+        self.gateway.join_request_publish(phyPayload_encoded)
+
+    def __eq__(self, other):
+        if not isinstance(other, Watchdog):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+        return self.applicationID.__eq__(other.applicationID) and \
+               self.applicationName.__eq__(other.applicationName) and \
+               self.applicationName.__eq__(other.applicationName) and \
+               self.deviceName.__eq__(other.deviceName) and self.devEUI.__eq__(other.devEUI) and \
+               self.margin.__eq__(other.margin) and self.externalPowerSource.__eq__(other.externalPowerSource) and \
+               self.batteryLevelUnavailable.__eq__(other.batteryLevelUnavailable) and \
+               self.batteryLevel.__eq__(other.batteryLevel) and self.tags.__eq__(other.tags)
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
