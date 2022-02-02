@@ -17,21 +17,13 @@ class TestPayloadUtil(unittest.TestCase):
         print("\n SetUp")
 
         self.appKey = "a772a9b9c627b3a41370b8a8646e6e80"
-        self.appSKey = "49B9A84A87C8739345CFE0E710C415BD"
-        self.netSKey = "9124E280A8E0645ABE6974DF43E029B8"
+        self.netSKey = "1F5572B62B9052AC821BBDFF92DC09B2"
+        self.appSKey = "796D28D4F849ABFF68656E6671D833F3"
         self.LoRaWANR1_0 = "LoRaWANR1"
 
         # Join request
         self.payload_join_request = "AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI="
 
-        # Join accept
-        self.payload_join_accept = "IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw"
-
-        # Compute uplink
-        self.payload_compute_uplink_con = "gKmbBwEANAEBhSve0Q=="
-        self.payload_compute_uplink_unc = "YKmbBwGgAQAA3s0o6XpEg709qE45mZK/hfM07NFXhiM="
-
-        # Payload join request
         self.json_join_request = {
             "mhdr": {
                 "mType": "JoinRequest",
@@ -45,7 +37,12 @@ class TestPayloadUtil(unittest.TestCase):
             "mic": "df6acd12"
         }
 
-        # Payload join accept
+        self.mic_join_request = self.json_join_request['mic']
+
+
+        # Join accept
+        self.payload_join_accept = "IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw"
+
         self.json_join_accept = {
             "mhdr": {
                 "mType": "JoinAccept",
@@ -57,15 +54,20 @@ class TestPayloadUtil(unittest.TestCase):
             "mic": "e60fa370"
         }
 
-        # Payload compute uplink confirmed data up
-        self.json_compute_uplink_con = {
+        self.mic_join_accept = self.json_join_accept['mic']
+
+
+        # Compute data
+        self.payload_compute_data = "QPt/dgEABQABYVH7mg=="
+
+        self.json_compute_data = {
             "mhdr": {
-                "mType": "ConfirmedDataUp",
+                "mType": "UnconfirmedDataUp",
                 "major": "LoRaWANR1"
             },
             "macPayload": {
                 "fhdr": {
-                    "devAddr": "01079ba9",
+                    "devAddr": "01767ffb",
                     "fCtrl": {
                         "adr": False,
                         "adrAckReq": False,
@@ -73,53 +75,18 @@ class TestPayloadUtil(unittest.TestCase):
                         "fPending": False,
                         "classB": False
                     },
-                    "fCnt": 308,
+                    "fCnt": 5,
                     "fOpts": None
                 },
                 "fPort": 1,
-                "frmPayload": None
+                "frmPayload": []
             },
-            "mic": "852bded1"
+            "mic": "6151fb9a"
         }
 
-        # Payload compute uplink unconfirmed data down
-        self.json_compute_uplink_unc = {
-            "mhdr": {
-                "mType": "UnconfirmedDataDown",
-                "major": "LoRaWANR1"
-            },
-            "macPayload": {
-                "fhdr": {
-                    "devAddr": "01079ba9",
-                    "fCtrl": {
-                        "adr": True,
-                        "adrAckReq": False,
-                        "ack": True,
-                        "fPending": False,
-                        "classB": False
-                    },
-                    "fCnt": 1,
-                    "fOpts": None
-                },
-                "fPort": 0,
-                "frmPayload": [
-                    {
-                        "bytes": "3s0o6XpEg709qE45mZK/hfM07A=="
-                    }
-                ]
-            },
-            "mic": "d1578623"
-        }
+        self.mic_compute_data = self.json_compute_data['mic']
 
-        # Mic compute uplink
-        self.mic_compute_uplink_con = self.json_compute_uplink_con['mic']
-        self.mic_compute_uplink_unc = self.json_compute_uplink_unc['mic']
-
-        # Mic join request
-        self.mic_join_request = self.json_join_request['mic']
-
-        # Mic join accept
-        self.mic_join_accept = self.json_join_accept['mic']
+        self.fCnt_compute_data = self.json_compute_data["macPayload"]["fhdr"]["fCnt"]
 
 
     def tearDown(self):
@@ -135,17 +102,16 @@ class TestPayloadUtil(unittest.TestCase):
             payload_util.compute_join_request_mic(base64.b64decode(self.payload_join_request), self.appKey),
             self.mic_join_request)
 
-    # Comparison between the mic in the JSON "compute_uplink" object and the mic computed by the function
-    # compute_uplink_data_mic
+    # Comparison between the mic in the JSON "compute_data" object and the mic computed by the function
+    # compute_data_mic
     # @ Parameter: payload_compute_uplink converted in hexadecimal number with b64decode
-    def test_compute_uplink_data_mic(self):
+    # @ Parameter: netSKey is the network session key and MUST BE CHANGED at each execution
+    def test_compute_data_mic(self):
         print("\n Test Compute Uplink Data Mic")
         self.assertEqual(
-            payload_util.compute_uplink_data_mic(base64.b64decode(self.payload_compute_uplink_con), self.LoRaWANR1_0,
-                                                 308, 0, 0, self.netSKey), self.mic_compute_uplink_con)
-        #self.assertEqual(
-        #    payload_util.compute_uplink_data_mic(base64.b64decode(self.payload_compute_uplink_unc), self.LoRaWANR1_0,
-        #                                         1, 0, 0, self.appKey), self.mic_compute_uplink_unc)
+            payload_util.compute_data_mic(base64.b64decode(self.payload_compute_data.encode()), self.LoRaWANR1_0,
+                                                 self.fCnt_compute_data, 0, 0, self.netSKey, True),
+            self.mic_compute_data)
 
     # Comparison between the mic in the JSON "join_accept" object and the mic computed by the function
     # compute_join_accept_mic

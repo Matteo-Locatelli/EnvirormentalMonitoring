@@ -174,7 +174,7 @@ def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey
     b0 += mic_bytes
     fn_mic.update(b0)
 
-    if mac_version == LorawanVersionEnum.LoRaWANR1_0.name:
+    if mac_version == LorawanVersionEnum.LoRaWANR1_0.value:
         mic[:] = fn_mic.digest()[0:4]
 
     return mic.hex()
