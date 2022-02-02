@@ -2,12 +2,17 @@ import json
 import base64
 import time
 import random
+from typing import TypeVar
+
 from paho.mqtt.client import Client
 from datetime import datetime
 
 from enums.crc_status_enum import CRCStatusEnum
+from enums.tx_ack_status_enum import TxAckStatusEnum
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
+from payloads.tx_ack_item_payload import TxAckItemPayload
+from payloads.tx_ack_payload import TxAckPayload
 from payloads.up_payload import UpPayload
 from utils.payload_util import getJsonFromObject
 
@@ -15,6 +20,8 @@ from utils.payload_util import getJsonFromObject
 from payloads.conn_payload import ConnPayload
 from payloads.stats_payload import StatsPayload
 from enums.connection_state_enum import ConnectionStateEnum
+
+T = TypeVar('T')
 
 """""
 def get_up_payload(message_type, major_type, phy_payload):
@@ -37,6 +44,7 @@ class EdgeNode:
     number_of_gw = 0
     conn_topic = "gateway/%s/state/conn"
     up_topic = "gateway/%s/event/up"
+    ack_topic = "gateway/%s/event/ack"
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
 
@@ -93,16 +101,7 @@ class EdgeNode:
         conn_payload.state = state
         conn_payload.gatewayID = self.encoded_id_gateway
 
-        # json conversion
-        json_conn_payload = getJsonFromObject(conn_payload)
-        message = json.dumps(json_conn_payload)
-
-        result = self.client.publish(topic=conn_topic, payload=message)
-        status = result[0]
-        if status == 0:
-            print(f"Send `{message}` to topic `{conn_topic}`")
-        else:
-            print(f"Failed to send message to topic {conn_topic}")
+        self.publish(conn_topic, conn_payload)
 
     def stats_publish(self):
         stats_topic = EdgeNode.stats_topic % self.id_gateway
@@ -119,16 +118,7 @@ class EdgeNode:
         randstr = "stats" + str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         stats_payload.statsID = base64.b64encode(randstr.encode()).decode()
 
-        # json conversion
-        json_stats_payload = getJsonFromObject(stats_payload)
-        message = json.dumps(json_stats_payload)
-
-        result = self.client.publish(stats_topic, message)
-        status = result[0]
-        if status == 0:
-            print(f"Send `{message}` to topic `{stats_topic}`")
-        else:
-            print(f"Failed to send message to topic {stats_topic}")
+        self.publish(stats_topic, stats_payload)
 
     def up_link_publish(self, phy_payload):
         up_topic = EdgeNode.up_topic % self.id_gateway
@@ -140,16 +130,28 @@ class EdgeNode:
                         crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
         up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
 
-        # json conversion
-        json_up_link_payload = getJsonFromObject(up_link_payload)
-        message = json.dumps(json_up_link_payload)
+        self.publish(up_topic, up_link_payload)
 
-        result = self.client.publish(up_topic, message)
+    def tack_message_publish(self, tx_ack_status, downlink_id, token):
+        ack_topic = EdgeNode.ack_topic % self.id_gateway
+        tx_ack_payload = TxAckPayload()
+        tx_ack_payload.gatewayID = self.encoded_id_gateway
+        tx_ack_payload.items.append(TxAckItemPayload(tx_ack_status.value))
+        tx_ack_payload.token = token
+        tx_ack_payload.downlink_id = downlink_id
+        self.publish(ack_topic, tx_ack_payload)
+
+    def publish(self, topic, payload: T):
+        # json conversion
+        json_payload = getJsonFromObject(payload)
+        message = json.dumps(json_payload)
+
+        result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            print(f"Send `{message}` to topic `{up_topic}`")
+            print(f"Send `{message}` to topic `{topic}`")
         else:
-            print(f"Failed to send message to topic {up_topic}")
+            print(f"Failed to send message to topic {topic}")
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
@@ -182,10 +184,14 @@ class EdgeNode:
 
     def on_message(self, client, userdata, msg):
         print("Received message: ", msg.payload.decode(), " from topic: ", msg.topic)
-        phyPayload = json.loads(msg.payload.decode())['phyPayload']
+        message_decoded = json.loads(msg.payload.decode())
+        phyPayload = message_decoded['phyPayload']
+        result = False
         for watchdog in self.watchdogs:
-            watchdog.receive_message(phyPayload)
+            result = result or watchdog.receive_message(phyPayload)
 
+        if result:
+            self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
         if msg.state == 0:
             self.rxPacketsReceivedOK += 1
         self.rxPacketsReceived += 1

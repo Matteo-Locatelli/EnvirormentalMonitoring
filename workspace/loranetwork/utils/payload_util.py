@@ -1,11 +1,9 @@
-import base64
+
 import json
 
 from Crypto.Hash import CMAC
 from Crypto.Cipher import AES
 from typing import TypeVar
-
-from Crypto.Util.Padding import pad
 
 from enums.lorawan_version_enum import LorawanVersionEnum
 

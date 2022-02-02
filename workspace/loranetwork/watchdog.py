@@ -105,8 +105,9 @@ class Watchdog:
         self.active = True
 
     def receive_message(self, phyPayload):
-        manage_received_message(self, phyPayload)
+        result = manage_received_message(self, phyPayload)
         self.fCntDown += 1
+        return result
 
     def send_device_status(self):
         if not self.active:
