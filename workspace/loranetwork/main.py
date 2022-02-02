@@ -4,6 +4,8 @@ from edgenode import EdgeNode
 import time
 
 from enums.connection_state_enum import ConnectionStateEnum
+from thread_edgenode import ThreadEdgenode
+from thread_watchdog import ThreadWatchdog
 from utils.api_utils import getDeviceKeys
 from watchdog import Watchdog
 
@@ -71,31 +73,45 @@ def activate_watchdogs(watchdog_list):
 
 def assign_watchdogs(watchdog_list, gateway_list):
     devices_per_gateway = math.ceil(len(watchdog_list) / len(gateway_list))
+    thread_watchdog_list = []
+
     i = 0
     j = 0
     while i < len(watchdog_list):
+        thread_watchdog = ThreadWatchdog(watchdog_list[i])
+
         watchdog_list[i].gateway = gateway_list[j]
         gateway_list[j].watchdogs.append(watchdog_list[i])
+
+        thread_watchdog_list.append(thread_watchdog)
         i += 1
         if i >= devices_per_gateway:
             j += 1
-
+    return thread_watchdog_list
 
 def main():
-    gateway_list = []
+    thread_gateway_list = []
     gateway = EdgeNode(broker, port, id_gateway_list[0])
-    gateway_list.append(gateway)
     gateway.start_connection()
     gateway.subscribe()
     gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
     gateway.stats_publish()
+    gateway_list = []
+    gateway_list.append(gateway)
+    thread_edgenode = ThreadEdgenode(gateway)
+    thread_gateway_list = []
+    thread_gateway_list.append(thread_edgenode)
     watchdog_list = []
     for device in devices['result']:
         watchdog_list.append(Watchdog(applicationID=device['applicationID'], deviceName=device['name'],
                                       deviceProfileID=device['deviceProfileID'], devEUI=device['devEUI'],
                                       batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
-    assign_watchdogs(watchdog_list, gateway_list)
-    activate_watchdogs(watchdog_list)
+    thread_watchdog_list = assign_watchdogs(watchdog_list, gateway_list)
+    for thread_gateway in thread_gateway_list:
+        thread_gateway.start()
+    for thread_watchdog in thread_watchdog_list:
+        thread_watchdog.start()
+    
     time.sleep(1)
     send_status(watchdog_list)
 
