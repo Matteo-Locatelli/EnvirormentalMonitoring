@@ -8,7 +8,7 @@ from utils.api_utils import getDeviceKeys
 from watchdog import Watchdog
 
 # broker address
-broker = "172.30.52.14"
+broker = "172.18.200.139"
 port = 1883
 
 id_gateway_list = ["1f6aa45e9ed77a78"]
@@ -57,6 +57,11 @@ gateways = {
 }
 
 
+def send_status(watchdog_list):
+    for watchdog in watchdog_list:
+        watchdog.send_device_status()
+
+
 def activate_watchdogs(watchdog_list):
     for watchdog in watchdog_list:
         resp = getDeviceKeys(watchdog.devEUI)
@@ -91,9 +96,8 @@ def main():
                                       batteryLevelUnavailable=device['deviceStatusBatteryLevelUnavailable']))
     assign_watchdogs(watchdog_list, gateway_list)
     activate_watchdogs(watchdog_list)
-
-    for watchdog in watchdog_list:
-        watchdog.send_data()
+    time.sleep(1)
+    send_status(watchdog_list)
 
     finish = 1
     while finish != "0":

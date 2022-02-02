@@ -1,16 +1,17 @@
 import json
 
-from downlink_message_manager import manageJoinAcceptRequest, check_message
+from downlink_message_manager import manage_received_message
+from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
-from payloads.mac_layer.phy_payload import PhyPayload
+from payloads.mac_layer.phy_payload import PhyPayload, MacPayload, FHDR, Frame
 import random
 import base64
 
-from utils.coder import encodePhyPayload, decode_join_accept_mac_payload
-from utils.payload_util import compute_join_request_mic, getJsonFromObject
+from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload
+from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic
 
 
 class Tags:
@@ -26,11 +27,12 @@ class Tags:
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
-#def getRandomData():
+
+# def getRandomData():
 
 class Watchdog:
     def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
-                 externalPowerSource=False, batteryLevelUnavailable=False, batteryLevel=None, tags=Tags(),
+                 externalPowerSource=False, batteryLevelUnavailable=True, batteryLevel=255, tags=Tags(),
                  deviceProfileID="", deviceProfileName="", app_key="", net_skey="", app_skey="",
                  joinEUI="0000000000000000"):
         self.applicationID = applicationID
@@ -54,27 +56,27 @@ class Watchdog:
         self.gateway = None
         self.active = False
         self.dev_addr = None
-        self.fCntUp = 0 # da incrementare ad ogni invio
-        self.fCntDown = 0 # da incrementare ogni ricezione
+        self.fCntUp = 0  # da incrementare ad ogni invio
+        self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
 
     def join(self):
-        phyPayload = PhyPayload()
-        phyPayload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.getName()
-        phyPayload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
-        phyPayload.macPayload.devEUI = self.devEUI
-        phyPayload.macPayload.joinEUI = self.joinEUI
+        phy_payload = PhyPayload()
+        phy_payload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.getName()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        phy_payload.macPayload.devEUI = self.devEUI
+        phy_payload.macPayload.joinEUI = self.joinEUI
         self.dev_nonce = random.randint(10000, 30000)
-        phyPayload.macPayload.devNonce = self.dev_nonce
-        phyPayload.mic = "0"
-        phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
-        phyPayload.mic = compute_join_request_mic(phyPayloadByte, self.app_key)
-        phyPayload_encoded = encodePhyPayload(phyPayload)
+        phy_payload.macPayload.devNonce = self.dev_nonce
+        phy_payload.mic = "0"
+        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
+        phy_payload.mic = compute_join_request_mic(phy_payload_encoded, self.app_key)
+        phyPayload_encoded = encodePhyPayload(phy_payload)
+        self.fCntUp += 1
         self.gateway.up_link_publish(phyPayload_encoded)
 
     def send_data(self):
-        if self.active:
-            #può mandare dati, altrimenti NO
+        self
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
@@ -96,20 +98,52 @@ class Watchdog:
         self.app_nonce = join_accept_mac_payload.app_nonce
         self.net_ID = join_accept_mac_payload.net_ID
         self.dev_addr = join_accept_mac_payload.dev_addr
+        self.batteryLevelUnavailable = False
+        self.batteryLevel = 254
+        self.margin = 31
         print(getJsonFromObject(join_accept_mac_payload))
         self.active = True
 
     def receive_message(self, phyPayload):
-        check_message(self, phyPayload)
+        manage_received_message(self, phyPayload)
+        self.fCntDown += 1
 
     def send_device_status(self):
+        if not self.active:
+            return
+
         mac_command = MacCommandItem()
         mac_command_payload = MacCommandPayload()
         mac_command_payload.margin = self.margin
         mac_command_payload.battery = self.batteryLevel
         mac_command.payload = mac_command_payload
         mac_command.cid = MacCommandEnum.DEVICE_STATUS_ANS.getName()
-        
+        frm_payload_encoded = encode_mac_commands_to_frm_payload(self.app_skey,
+                                                                 self.net_skey, 0,
+                                                                 True, self.dev_addr, self.fCntDown, [mac_command])
+        # setting phy payload
+        phy_payload = PhyPayload()
+        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.getName()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        # setting mac payload
+        mac_payload = MacPayload()
+        mac_payload.fPort = 0
+        mac_payload.frmPayload.append(Frame(frm_payload_encoded))
+        # setting fhdr payload
+        fhdr = FHDR()
+        fhdr.devAddr = self.dev_addr
+        fhdr.fCnt = self.fCntDown
+
+        mac_payload.fhdr = fhdr
+
+        phy_payload.macPayload = mac_payload
+        phy_payload.mic = "0"
+        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
+        phy_payload.mic = compute_data_mic(phy_payload_encoded, LorawanVersionEnum.LoRaWANR1_0.name, self.fCntUp, 0, 0,
+                                           self.net_skey, True)
+        phyPayload_encoded = encodePhyPayload(phy_payload)
+        self.fCntUp += 1
+        self.gateway.up_link_publish(phyPayload_encoded)
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

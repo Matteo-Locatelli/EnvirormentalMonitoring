@@ -7,13 +7,12 @@ from typing import TypeVar
 
 from Crypto.Util.Padding import pad
 
-T = TypeVar('T')
+from enums.lorawan_version_enum import LorawanVersionEnum
 
-LoRaWANR1_0 = "LoRaWANR1"
+T = TypeVar('T')
 
 
 def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data):
-    key = None
     if fPort == 0:
         key = bytes.fromhex(net_skey)
     else:
@@ -31,10 +30,9 @@ def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCn
         a[5] = 0x01
 
     a[6:10] = dev_addr_byte
-    temp = bytearray(2)
-    temp += fCnt.to_bytes(2, 'big')
-    fCnt = int.from_bytes(temp, 'big')
-    a[10:14] = fCnt.to_bytes(4, 'little')
+    temp = fCnt.to_bytes(2, 'little')
+    temp += bytearray(2)
+    a[10:14] = temp
 
     i = 0
     while i < len(data) / 16:
@@ -178,7 +176,7 @@ def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey
     b0 += mic_bytes
     fn_mic.update(b0)
 
-    if mac_version == LoRaWANR1_0:
+    if mac_version == LorawanVersionEnum.LoRaWANR1_0.name:
         mic[:] = fn_mic.digest()[0:4]
 
     return mic.hex()

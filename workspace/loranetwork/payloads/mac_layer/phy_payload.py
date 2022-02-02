@@ -53,11 +53,11 @@ class FCTRL:
 
     def getByte(self):
         byte = 0x00
-        byte = byte | (int(self.ADR) * 0x80)
-        byte = byte | (int(self.ADRACKReq) * 0x40)
-        byte = byte | (int(self.ACK) * 0x20)
-        byte = byte | (int(self.ClassB) * 0x10)
-        byte = byte | (int(self.FPending) * 0x10)
+        byte = byte | (int(self.adr) * 0x80)
+        byte = byte | (int(self.adrAckReq) * 0x40)
+        byte = byte | (int(self.ack) * 0x20)
+        byte = byte | (int(self.classB) * 0x10)
+        byte = byte | (int(self.fPending) * 0x10)
         if (byte & 0x0f) != self.fOptsLen:
             raise Exception("Something is wrong")
         return byte.to_bytes(1, 'big')

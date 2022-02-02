@@ -7,7 +7,7 @@ from payloads.mac_layer.join_accept_mac_payload import JoinAccpetMacPayload
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import *
 from enums.message_type_enum import MessageTypeEnum
-from utils.payload_util import encrypt_frm_payload, encrypt_mac_payload
+from utils.payload_util import encrypt_frm_payload, encrypt_mac_payload, getJsonFromObject
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
@@ -137,6 +137,8 @@ def encode_mac_commands_to_data_payload(is_uplink, mac_commands):
     data = bytearray()
     for mac_command in mac_commands:
         cid = MacCommandEnum.findByName(mac_command.cid, is_uplink)
+        if cid is None:
+            raise Exception("Unknown command ")
         mac_payload_encoded = encode_mac_payload(cid, mac_command)
         data += mac_payload_encoded
 
@@ -202,10 +204,15 @@ def decode_frm_payload_to_mac_commands(app_skey, net_skey, fPort, is_uplink, dev
 
 
 def encode_mac_commands_to_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, mac_commands):
+    print("***encode_mac_commands_to_frm_payload")
+    print("Data to encode", getJsonFromObject(mac_commands[0]))
     data = encode_mac_commands_to_data_payload(is_uplink, mac_commands)
+    print("Data encoded --> ", data)
 
     dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
-    encrypted_data = encrypt_frm_payload(app_skey, net_skey, is_uplink, fPort, dev_addr_byte, fCnt, data)
+    encrypted_data = encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data)
+    print("Encoded data encrypted --> ", encrypted_data)
+
     return base64.b64encode(encrypted_data).decode()
 
 
