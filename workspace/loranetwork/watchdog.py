@@ -11,8 +11,9 @@ from payloads.mac_layer.phy_payload import PhyPayload, MacPayload, FHDR, Frame
 import random
 import base64
 
-from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload
-from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic
+from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload, \
+    encodeDevAddr
+from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic, encrypt_frm_payload
 from watchdog_data import WatchdogData
 
 
@@ -79,7 +80,15 @@ class Watchdog:
 
     def send_data(self):
         w_data = WatchdogData()
+        w_data.battery = self.batteryLevel
+        w_data.humidity = random.gauss(70, 20)
+        w_data.temperature = random.gauss(5, 6)
         frame_payload = w_data.encode_data(self)
+
+        dev_addr_byte = encodeDevAddr(int(self.dev_addr, 16).to_bytes(4, 'little'))
+        frame_payload_encoded = encrypt_frm_payload(self.app_skey, self.net_skey, 0, True, dev_addr_byte, self.fCntUp,
+                                                    frame_payload)
+
         phy_payload = PhyPayload()
         # set MHDR
         phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.getName()
@@ -92,10 +101,11 @@ class Watchdog:
         fhdr.fCnt = self.fCntUp
 
         macPaylaod.fhdr = fhdr
+        macPaylaod.frmPayload.append(Frame(frame_payload_encoded))
 
         phy_payload.macPayload = macPaylaod
         phy_payload.mic = "0"
-        phy_payload_encoded = frame_payload
+        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
         phy_payload.mic = compute_data_mic(phy_payload_encoded, LorawanVersionEnum.LoRaWANR1_0.name, self.fCntUp, 0, 0,
                                            self.net_skey, True)
         phyPayload_encoded = encodePhyPayload(phy_payload)
