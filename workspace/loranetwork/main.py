@@ -1,4 +1,5 @@
 import math
+import threading
 
 from edgenode import EdgeNode
 import time
@@ -77,17 +78,22 @@ def assign_watchdogs(watchdog_list, gateway_list):
 
     i = 0
     j = 0
+    threadLock = threading.Lock()
     while i < len(watchdog_list):
-        thread_watchdog = ThreadWatchdog(watchdog_list[i])
+        if i % devices_per_gateway == 0 and i > 0:
+            threadLock = threading.Lock()
+            j += 1
+
+        thread_watchdog = ThreadWatchdog(watchdog_list[i], threadLock)
 
         watchdog_list[i].gateway = gateway_list[j]
         gateway_list[j].watchdogs.append(watchdog_list[i])
 
         thread_watchdog_list.append(thread_watchdog)
         i += 1
-        if i >= devices_per_gateway:
-            j += 1
+
     return thread_watchdog_list
+
 
 def main():
     thread_gateway_list = []
@@ -111,7 +117,7 @@ def main():
         thread_gateway.start()
     for thread_watchdog in thread_watchdog_list:
         thread_watchdog.start()
-    
+
     time.sleep(1)
     send_status(watchdog_list)
 
