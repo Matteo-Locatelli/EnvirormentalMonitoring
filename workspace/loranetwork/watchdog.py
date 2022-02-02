@@ -1,5 +1,6 @@
 import json
 
+import watchdog_data
 from downlink_message_manager import manage_received_message
 from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
@@ -12,6 +13,7 @@ import base64
 
 from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload
 from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic
+from watchdog_data import WatchdogData
 
 
 class Tags:
@@ -76,7 +78,30 @@ class Watchdog:
         self.gateway.up_link_publish(phyPayload_encoded)
 
     def send_data(self):
-        self
+        w_data = WatchdogData()
+        frame_payload = w_data.encode_data(self)
+        phy_payload = PhyPayload()
+        # set MHDR
+        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.getName()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        # set MacPayload
+        macPaylaod = MacPayload()
+        # set FHDR
+        fhdr = FHDR()
+        fhdr.devAddr = self.dev_addr
+        fhdr.fCnt = self.fCntUp
+
+        macPaylaod.fhdr = fhdr
+
+        phy_payload.macPayload = macPaylaod
+        phy_payload.mic = "0"
+        phy_payload_encoded = frame_payload
+        phy_payload.mic = compute_data_mic(phy_payload_encoded, LorawanVersionEnum.LoRaWANR1_0.name, self.fCntUp, 0, 0,
+                                           self.net_skey, True)
+        phyPayload_encoded = encodePhyPayload(phy_payload)
+        self.fCntUp += 1
+        self.gateway.up_link_publish(phyPayload_encoded)
+
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
