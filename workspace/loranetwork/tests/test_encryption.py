@@ -1,6 +1,10 @@
+import json
+import random
+
 from enums.mac_command_enum import MacCommandEnum
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import Frame
+from payloads.watchdog_data import WatchdogData
 from utils.coder import encodeDevAddr, decode_frm_payload_to_mac_commands, encode_mac_commands_to_frm_payload
 from utils.payload_util import encrypt_frm_payload, getJsonFromObject
 import base64
@@ -31,22 +35,22 @@ mac_dec_list = decode_frm_payload_to_mac_commands(appSKey, netSkey2, 0, False, d
 for mac_dec in mac_dec_list:
     print(getJsonFromObject(mac_dec))
 
-dev_addr = "013c4657"
-netSKey = "AE0E836A7CAE1D27E94DB4E850205869"
-appSKey = "788854073181F4C9CDC5F3A3D3095B6C"
-string = "WSNz"
+dev_addr = "0041d508"
+netSKey = "4393158F5AD2FAB9E8F14BC529A066B9"
+appSKey = "9AB5EC6710CFBE409123B53A1DFF9758"
+w_data = WatchdogData()
+w_data.battery = 25
+w_data.humidity = round(random.gauss(70, 20), 2)
+w_data.temperature = round(random.gauss(5, 6), 2)
+frame_payload = bytearray(base64.b64decode("jBb5TIcTUoCP+kW9ZwI/mjJdVqBD2CioVK9yPn6KBKcwRXvOTZUcNYf1JRnq1QlUwo0AX6Zly6Q="))
 dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
-d = encrypt_frm_payload(appSKey, netSKey, 0, True, dev_addr_byte, 1, bytearray(base64.b64decode(string)))
-print(d[0])
+ecrypted_frame_payload = encrypt_frm_payload(appSKey, netSKey, 1, True, dev_addr_byte, 11, frame_payload)
+string_ecn = base64.b64encode(ecrypted_frame_payload).decode()
+print(string_ecn)
 
-mac_command = MacCommandItem()
-mac_command_payload = MacCommandPayload()
-mac_command_payload.margin = 10
-mac_command_payload.battery = 10
-mac_command.payload = mac_command_payload
-mac_command.cid = MacCommandEnum.DEVICE_STATUS_ANS.getName()
-frm_payload_encoded = encode_mac_commands_to_frm_payload(appSKey, netSKey, 0, True, dev_addr, 1, [mac_command])
-print(base64.b64decode(frm_payload_encoded.encode()))
+frame_payload = bytearray(base64.b64decode(string_ecn.encode()))
+ecrypted_frame_payload = encrypt_frm_payload(appSKey, netSKey, 1, True, dev_addr_byte, 9, frame_payload)
+string_ecn = ecrypted_frame_payload.decode()
+#print(string_ecn)
 
-frm_payload_dec = decode_frm_payload_to_mac_commands(appSKey, netSKey, 0, True, dev_addr, 1, [Frame(frm_payload_encoded)])
-print(getJsonFromObject(frm_payload_dec[0]))
+

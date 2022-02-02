@@ -14,4 +14,4 @@ class ThreadEdgenode(Thread):
                 self.gateway.stats_publish()
                 count = 0
             count += 1
-            time.sleep(1)
+            time.sleep(10)

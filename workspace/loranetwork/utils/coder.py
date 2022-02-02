@@ -327,7 +327,7 @@ def encodePhyPayload(phyPayload):
 
         frmPayload = phyPayload.macPayload.frmPayload
         for frame in frmPayload:
-            data += base64.b64decode(frame.bytes)
+            data += base64.b64decode(frame.bytes.encode())
 
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
 

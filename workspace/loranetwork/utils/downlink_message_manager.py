@@ -17,7 +17,7 @@ def manage_received_message(watchdog, phyPayloadEncoded):
         mic = compute_join_accept_mic(base64.b64decode(phyPayloadEncoded), watchdog.app_key)
     elif phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
             phyPayload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.getName():
-        mic = compute_data_mic(base64.b64decode(phyPayloadEncoded), LorawanVersionEnum.LoRaWANR1_0.name,
+        mic = compute_data_mic(base64.b64decode(phyPayloadEncoded), LorawanVersionEnum.LoRaWANR1_0.value,
                                watchdog.fCntDown, 0, 0, watchdog.net_skey, False)
     else:
         print("Unknown downlink message")

@@ -142,6 +142,8 @@ class EdgeNode:
         self.publish(ack_topic, tx_ack_payload)
 
     def publish(self, topic, payload: T):
+        if not self.client.is_connected():
+            return print("Client not connected")
         # json conversion
         json_payload = getJsonFromObject(payload)
         message = json.dumps(json_payload)
@@ -149,7 +151,7 @@ class EdgeNode:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            print(f"Send `{message}` to topic `{topic}`")
+            print(f"Send message to topic `{topic}`")
         else:
             print(f"Failed to send message to topic {topic}")
 
@@ -174,7 +176,6 @@ class EdgeNode:
 
     def on_publish(self, client, userdata, mid):
         self.txPacketsReceived += 1
-        print("Message pubblished", mid)
 
     def on_disconnect(self, client, userdata, rc):
         print("client disconnected with code=", rc)
@@ -183,7 +184,7 @@ class EdgeNode:
         print("Subscribed to topic ", mid)
 
     def on_message(self, client, userdata, msg):
-        print("Received message: ", msg.payload.decode(), " from topic: ", msg.topic)
+        print(f"Edgenode `{self.id_gateway}` received message from topic: `{msg.topic}`")
         message_decoded = json.loads(msg.payload.decode())
         phyPayload = message_decoded['phyPayload']
         result = False
@@ -195,3 +196,6 @@ class EdgeNode:
         if msg.state == 0:
             self.rxPacketsReceivedOK += 1
         self.rxPacketsReceived += 1
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

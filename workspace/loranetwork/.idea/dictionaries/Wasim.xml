@@ -12,6 +12,8 @@
       <w>loraiv</w>
       <w>randstr</w>
       <w>skey</w>
+      <w>timetoreceive</w>
+      <w>timetosend</w>
       <w>uplink</w>
     </words>
   </dictionary>

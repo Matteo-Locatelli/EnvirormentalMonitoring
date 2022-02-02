@@ -1,14 +1,14 @@
 import math
 import threading
 
-from edgenode import EdgeNode
+from nodes.edgenode import EdgeNode
 import time
 
 from enums.connection_state_enum import ConnectionStateEnum
-from thread_edgenode import ThreadEdgenode
-from thread_watchdog import ThreadWatchdog
+from threads.thread_edgenode import ThreadEdgenode
+from threads.thread_watchdog import ThreadWatchdog
 from utils.api_utils import getDeviceKeys
-from watchdog import Watchdog
+from nodes.watchdog import Watchdog
 
 # broker address
 broker = "172.18.200.139"
@@ -105,7 +105,6 @@ def main():
     gateway_list = []
     gateway_list.append(gateway)
     thread_edgenode = ThreadEdgenode(gateway)
-    thread_gateway_list = []
     thread_gateway_list.append(thread_edgenode)
     watchdog_list = []
     for device in devices['result']:
