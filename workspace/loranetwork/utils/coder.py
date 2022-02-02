@@ -9,7 +9,6 @@ from payloads.mac_layer.phy_payload import *
 from enums.message_type_enum import MessageTypeEnum
 from utils.payload_util import encrypt_frm_payload, encrypt_mac_payload, getJsonFromObject
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
 
 
 def MType(byte):
@@ -204,14 +203,10 @@ def decode_frm_payload_to_mac_commands(app_skey, net_skey, fPort, is_uplink, dev
 
 
 def encode_mac_commands_to_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, mac_commands):
-    print("***encode_mac_commands_to_frm_payload")
-    print("Data to encode", getJsonFromObject(mac_commands[0]))
     data = encode_mac_commands_to_data_payload(is_uplink, mac_commands)
-    print("Data encoded --> ", data)
 
     dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
     encrypted_data = encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data)
-    print("Encoded data encrypted --> ", encrypted_data)
 
     return base64.b64encode(encrypted_data).decode()
 
@@ -252,17 +247,17 @@ def decodePhyPayload(phy_payload_encoded):
         phyPayload.macPayload.devEUI = devEUI.hex()
         phyPayload.macPayload.devNonce = int.from_bytes(nonce, 'big')
         phyPayload.mic = mic.hex()
-        print("  JoinEUI: %s" % joinEUI.hex())
-        print("  DevEUI: %s" % devEUI.hex())
-        print("  Nonce:  %s" % nonce.hex())
-        print("  MIC: %s" % mic.hex())
+        #print("  JoinEUI: %s" % joinEUI.hex())
+        #print("  DevEUI: %s" % devEUI.hex())
+        #print("  Nonce:  %s" % nonce.hex())
+        #print("  MIC: %s" % mic.hex())
     elif mtype == MessageTypeEnum.JOIN_ACCEPT:
         print(" *** Join Accept")
         phyPayload.mhdr.mType = mtype.getName()
         phyPayload.macPayload = MacPayload()
         phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
         phyPayload.mic = mic.hex()
-        print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
+        #print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
     elif mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.CONFIRMED_DATA_UP \
             or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
         phyPayload.mhdr.mType = mtype.getName()
@@ -280,12 +275,12 @@ def decodePhyPayload(phy_payload_encoded):
 
         print(" *** ", mtype.getName())
 
-        print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
-        print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
-        print("  fCnt: %05d   fPort: %01x" % (phyPayload.macPayload.fhdr.fCnt, phyPayload.macPayload.fPort))
-        if len(phyPayload.macPayload.frmPayload) > 0:
-            print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
-        print("  mic: %04s " % phyPayload.mic)
+        #print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
+        #print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
+        #print("  fCnt: %05d   fPort: %01x" % (phyPayload.macPayload.fhdr.fCnt, phyPayload.macPayload.fPort))
+        #if len(phyPayload.macPayload.frmPayload) > 0:
+            #print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
+        #print("  mic: %04s " % phyPayload.mic)
     else:
         print("Unsupported type")
 

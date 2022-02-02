@@ -48,7 +48,7 @@ class EdgeNode:
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
 
-    def __init__(self, broker, port, id_gateway, ip="localhost"):
+    def __init__(self, broker, port, id_gateway, name="", ip="localhost", organization_id=None, network_server_id=None):
         self.broker = broker
         self.port = port
         self.ip = ip
@@ -56,7 +56,10 @@ class EdgeNode:
         self.username = "chirpstack_gw"
         self.password = ""
         self.id_gateway = id_gateway
+        self.name = name
         self.encoded_id_gateway = base64.b64encode(int(id_gateway, 16).to_bytes(8, 'big')).decode()
+        self.organization_id = organization_id
+        self.network_server_id = network_server_id
         self.can_sand_data = False
         self.client = None
         self.rxPacketsReceived = 1  # Number of radio packets received.
@@ -64,6 +67,7 @@ class EdgeNode:
         self.txPacketsReceived = 0  # Number of downlink packets received for transmission.
         self.txPacketsEmitted = 0  # Number of downlink packets emitted.
         self.watchdogs = []
+        EdgeNode.number_of_gw += 1
 
     def start_connection(self):
         try:
