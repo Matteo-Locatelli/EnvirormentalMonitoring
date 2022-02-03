@@ -4,6 +4,10 @@ import time
 from utils.api_utils import getDeviceKeys
 
 
+def getDecreaseBatteryLevel(timetosend, spreadingFactor, power):
+    return 1
+
+
 class ThreadWatchdog(Thread):
     def __init__(self, watchdog, threadLock, criticalSectionLock):
         Thread.__init__(self)
@@ -11,6 +15,7 @@ class ThreadWatchdog(Thread):
         self.threadLock = threadLock #serve per non accedere allo stesso gateway contemporaneamente
         self.criticalSectionLock = criticalSectionLock
         self._running = True
+        self.timetoupdate = 1000
 
     def run(self):
         resp = getDeviceKeys(self.watchdog.devEUI)
@@ -20,6 +25,19 @@ class ThreadWatchdog(Thread):
         self.threadLock.release()
         while self._running:
             currentMillis = round(time.time() * 1000)
+
+            if (currentMillis - self.watchdog.previousMillisBatteryUpdate) > self.timetoupdate:
+                spreadingFactor = None
+                power = None
+                self.watchdog.previousMillisBatteryUpdate = currentMillis
+                if self.watchdog.txInfo is not None:
+                    spreadingFactor = self.watchdog.txInfo.loRaModulationInfo.spreadingFactor
+                    power = self.watchdog.txInfo.power
+
+                self.watchdog.batteryLevel -= getDecreaseBatteryLevel(self.watchdog.timetosend, spreadingFactor, power)
+                if self.watchdog.batteryLevel < 0:
+                    self.watchdog.batteryLevel = 0
+
             if (currentMillis - self.watchdog.previousMillisS) > self.watchdog.timetosend:
                 self.criticalSectionLock.acquire()
                 self.threadLock.acquire()

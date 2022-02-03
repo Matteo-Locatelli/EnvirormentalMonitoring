@@ -65,6 +65,8 @@ class Watchdog:
         self.timetoreceive = 40000  # timetoreceive in ms
         self.previousMillisS = 0
         self.previousMillisR = 0
+        self.txInfo = None
+        self.previousMillisBatteryUpdate = 0
 
     def join(self):
         phy_payload = PhyPayload()
@@ -104,6 +106,8 @@ class Watchdog:
         fhdr = FHDR()
         fhdr.devAddr = self.dev_addr
         fhdr.fCnt = self.fCntUp
+
+        fhdr.fCtrl.adr = True
 
         macPaylaod.fhdr = fhdr
         macPaylaod.fPort = 1
@@ -145,8 +149,9 @@ class Watchdog:
         print(getJsonFromObject(join_accept_mac_payload))
         self.active = True
 
-    def receive_message(self, phyPayload):
+    def receive_message(self, phyPayload, txInfo):
         result = manage_received_message(self, phyPayload)
+        self.txInfo = txInfo
         self.fCntDown += 1
         return result
 
@@ -175,6 +180,7 @@ class Watchdog:
         fhdr = FHDR()
         fhdr.devAddr = self.dev_addr
         fhdr.fCnt = self.fCntUp
+        fhdr.fCtrl.adr = True
 
         mac_payload.fhdr = fhdr
 

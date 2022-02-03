@@ -2,6 +2,7 @@ import json
 import base64
 import time
 import random
+from types import SimpleNamespace
 from typing import TypeVar
 
 from paho.mqtt.client import Client
@@ -193,7 +194,9 @@ class EdgeNode:
         phyPayload = message_decoded['phyPayload']
         result = False
         for watchdog in self.watchdogs:
-            result = result or watchdog.receive_message(phyPayload)
+            txInfoStr = json.dumps(message_decoded['txInfo'])
+            txInfo = json.loads(txInfoStr, object_hook=lambda d: SimpleNamespace(**d))
+            result = result or watchdog.receive_message(phyPayload, txInfo)
 
         if result:
             self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
