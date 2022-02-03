@@ -1,7 +1,6 @@
 import json
 
 from payloads.info.packets_per_frequency import PacketsPerFrequency
-from payloads.info.packets_per_modulation import PacketsPerModulation
 from payloads.info.packets_per_status import PacketsPerStatus
 
 
@@ -17,11 +16,11 @@ class StatsPayload:
     def __init__(self, id_gateway="", ip="", time="", configVersion="", rxPacketsReceived=0, rxPacketsReceivedOK=0,
                  txPacketsReceived=0, txPacketsEmitted=0, statsID="", location=None, metaData=Metadata(),
                  txPacketsPerFrequency=PacketsPerFrequency(), rxPacketsPerFrequency=PacketsPerFrequency(),
-                 txPacketsPerModulation=PacketsPerModulation(), rxPacketsPerModulation=PacketsPerModulation(),
+                 txPacketsPerModulation=[], rxPacketsPerModulation=[],
                  txPacketsPerStatus=PacketsPerStatus()):
-        self.gatewayID = id_gateway # encoded base64 standard
+        self.gatewayID = id_gateway  # encoded base64 standard
         self.ip = ip
-        self.time = time #format datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.time = time  # format datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         self.configVersion = configVersion
         self.rxPacketsReceived = rxPacketsReceived
         self.rxPacketsReceivedOK = rxPacketsReceivedOK

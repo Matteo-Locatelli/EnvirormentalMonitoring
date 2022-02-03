@@ -1,0 +1,203 @@
+
+YKmbBwGgAQAA3s0o6XpEg709qE45mZK/hfM07NFXhiM=
+phyPayload: {
+            "mhdr": {
+                "mType": "UnconfirmedDataDown",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01079ba9",
+                    "fCtrl": {
+                        "adr": true,
+                        "adrAckReq": false,
+                        "ack": true,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 1,
+                    "fOpts": null
+                },
+                "fPort": 0,
+                "frmPayload": [
+                    {
+                        "bytes": "3s0o6XpEg709qE45mZK/hfM07A=="
+                    }
+                ]
+            },
+            "mic": "d1578623"
+        }
+
+
+gKmbBwEANAEBhSve0Q==
+"phyPayload": {
+            "mhdr": {
+                "mType": "ConfirmedDataUp",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01079ba9",
+                    "fCtrl": {
+                        "adr": false,
+                        "adrAckReq": false,
+                        "ack": false,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 308,
+                    "fOpts": null
+                },
+                "fPort": 1,
+                "frmPayload": null
+            },
+            "mic": "852bded1"
+        }
+
+YKmbBwGgAAAAuX0joM23ehlfKcOOpnv1iqLWLyDekH8=
+"phyPayload": {
+            "mhdr": {
+                "mType": "UnconfirmedDataDown",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01079ba9",
+                    "fCtrl": {
+                        "adr": true,
+                        "adrAckReq": false,
+                        "ack": true,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 0,
+                    "fOpts": null
+                },
+                "fPort": 0,
+                "frmPayload": [
+                    {
+                        "bytes": "uX0joM23ehlfKcOOpnv1iqLWLw=="
+                    }
+                ]
+            },
+            "mic": "20de907f"
+        }
+
+
+gKmbBwEANAEBhSve0Q==
+"phyPayload": {
+            "mhdr": {
+                "mType": "ConfirmedDataUp",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01079ba9",
+                    "fCtrl": {
+                        "adr": false,
+                        "adrAckReq": false,
+                        "ack": false,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 308,
+                    "fOpts": null
+                },
+                "fPort": 1,
+                "frmPayload": null
+            },
+            "mic": "852bded1"
+        }
+
+
+*** Join accept
+IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw
+"phyPayload": {
+            "mhdr": {
+                "mType": "JoinAccept",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "bytes": "oZPZ8Uc4VjdXXtWmyVtLP515ZXTlcnBE+2Lniw=="
+            },
+            "mic": "e60fa370"
+        }
+    }
+
+
+*** Join request
+AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI=
+
+    "phyPayload": {
+            "mhdr": {
+                "mType": "JoinRequest",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "joinEUI": "0000000000000000",
+                "devEUI": "0ac14aad3e6391a1",
+                "devNonce": 52511
+            },
+            "mic": "df6acd12"
+        }
+    }
+
+
+**************** TEST MIC *********************
+net_sess = "241CC39F85BD9D7C3D0EA2F21F041995"
+
+payload1
+"YDzW6QGgAQAAei5cHmCQYh72t2aRhxG8qMta/wrr5o0="
+"phyPayload": {
+            "mhdr": {
+                "mType": "UnconfirmedDataDown",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01e9d63c",
+                    "fCtrl": {
+                        "adr": true,
+                        "adrAckReq": false,
+                        "ack": true,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 1,
+                    "fOpts": null
+                },
+                "fPort": 0,
+                "frmPayload": [
+                    {
+                        "bytes": "ei5cHmCQYh72t2aRhxG8qMta/w=="
+                    }
+                ]
+            },
+            "mic": "0aebe68d"
+        }
+
+payload2
+"gDzW6QEAOQEBlYT5Kg=="
+"phyPayload": {
+            "mhdr": {
+                "mType": "ConfirmedDataUp",
+                "major": "LoRaWANR1"
+            },
+            "macPayload": {
+                "fhdr": {
+                    "devAddr": "01e9d63c",
+                    "fCtrl": {
+                        "adr": false,
+                        "adrAckReq": false,
+                        "ack": false,
+                        "fPending": false,
+                        "classB": false
+                    },
+                    "fCnt": 313,
+                    "fOpts": null
+                },
+                "fPort": 1,
+                "frmPayload": null
+            },
+            "mic": "9584f92a"
+        }

@@ -1,5 +1,6 @@
-from payloads.info.lora_modulation import LoraModulation
 import json
+
+from payloads.info.lora_modulation import LoraModulation
 
 
 class DelayTimingInfo:

@@ -1,21 +1,27 @@
-import json
 import base64
-import time
+import json
 import random
-from paho.mqtt.client import Client
+import time
 from datetime import datetime
+from types import SimpleNamespace
+from typing import TypeVar
 
+from paho.mqtt.client import Client
+
+from enums.connection_state_enum import ConnectionStateEnum
 from enums.crc_status_enum import CRCStatusEnum
-from payloads.info.rx_info import RxInfo
-from payloads.info.tx_info import TxInfo
-from payloads.phy_payload import PhyPayload
-from payloads.up_payload import UpPayload
-from utils.payload_util import getObjectFromJson
-
+from enums.tx_ack_status_enum import TxAckStatusEnum
 # Payload message types
 from payloads.conn_payload import ConnPayload
+from payloads.info.rx_info import RxInfo
+from payloads.info.tx_info import TxInfo
 from payloads.stats_payload import StatsPayload
-from enums.connection_state_enum import ConnectionStateEnum
+from payloads.tx_ack_item_payload import TxAckItemPayload
+from payloads.tx_ack_payload import TxAckPayload
+from payloads.up_payload import UpPayload
+from utils.payload_util import getJsonFromObject
+
+T = TypeVar('T')
 
 """""
 def get_up_payload(message_type, major_type, phy_payload):
@@ -38,10 +44,12 @@ class EdgeNode:
     number_of_gw = 0
     conn_topic = "gateway/%s/state/conn"
     up_topic = "gateway/%s/event/up"
+    ack_topic = "gateway/%s/event/ack"
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
 
-    def __init__(self, broker, port, id_gateway, ip="localhost"):
+    def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None,
+                 network_server_id=None):
         self.broker = broker
         self.port = port
         self.ip = ip
@@ -49,13 +57,18 @@ class EdgeNode:
         self.username = "chirpstack_gw"
         self.password = ""
         self.id_gateway = id_gateway
+        self.name = name
         self.encoded_id_gateway = base64.b64encode(int(id_gateway, 16).to_bytes(8, 'big')).decode()
+        self.organization_id = organization_id
+        self.network_server_id = network_server_id
         self.can_sand_data = False
         self.client = None
         self.rxPacketsReceived = 1  # Number of radio packets received.
         self.rxPacketsReceivedOK = 0  # Number of radio packets received with valid PHY CRC.
         self.txPacketsReceived = 0  # Number of downlink packets received for transmission.
         self.txPacketsEmitted = 0  # Number of downlink packets emitted.
+        self.watchdogs = []
+        EdgeNode.number_of_gw += 1
 
     def start_connection(self):
         try:
@@ -93,16 +106,7 @@ class EdgeNode:
         conn_payload.state = state
         conn_payload.gatewayID = self.encoded_id_gateway
 
-        # json conversion
-        json_conn_payload = getObjectFromJson(conn_payload)
-        message = json.dumps(json_conn_payload)
-
-        result = self.client.publish(topic=conn_topic, payload=message)
-        status = result[0]
-        if status == 0:
-            print(f"Send `{message}` to topic `{conn_topic}`")
-        else:
-            print(f"Failed to send message to topic {conn_topic}")
+        self.publish(conn_topic, conn_payload)
 
     def stats_publish(self):
         stats_topic = EdgeNode.stats_topic % self.id_gateway
@@ -119,36 +123,47 @@ class EdgeNode:
         randstr = "stats" + str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         stats_payload.statsID = base64.b64encode(randstr.encode()).decode()
 
-        # json conversion
-        json_stats_payload = getObjectFromJson(stats_payload)
-        message = json.dumps(json_stats_payload)
+        self.publish(stats_topic, stats_payload)
 
-        result = self.client.publish(stats_topic, message)
-        status = result[0]
-        if status == 0:
-            print(f"Send `{message}` to topic `{stats_topic}`")
-        else:
-            print(f"Failed to send message to topic {stats_topic}")
-
-    def join_request_publish(self, client, phy_payload):
+    def up_link_publish(self, phy_payload, txInfo=TxInfo()):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
         randstr = str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         uplink_id = base64.b64encode(randstr.encode()).decode()
-        rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
-        join_request_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
+        rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
 
+        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=txInfo, rxInfo=rxInfo)
+
+        self.publish(up_topic, up_link_payload)
+
+    def tack_message_publish(self, tx_ack_status, downlink_id, token):
+        ack_topic = EdgeNode.ack_topic % self.id_gateway
+        tx_ack_payload = TxAckPayload()
+        tx_ack_payload.gatewayID = self.encoded_id_gateway
+        tx_ack_payload.items.append(TxAckItemPayload(tx_ack_status.value))
+        tx_ack_payload.token = token
+        tx_ack_payload.downlink_id = downlink_id
+        self.publish(ack_topic, tx_ack_payload)
+
+    def publish(self, topic, payload: T):
+        if not self.client.is_connected():
+            return print("Client not connected")
         # json conversion
-        json_join_request_payload = getObjectFromJson(join_request_payload)
-        message = json.dumps(json_join_request_payload)
+        json_payload = getJsonFromObject(payload)
+        message = json.dumps(json_payload)
 
-        result = client.publish(up_topic, message)
+        result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            print(f"Send `{message}` to topic `{up_topic}`")
+            print(f"Send message to topic `{topic}`")
         else:
-            print(f"Failed to send message to topic {up_topic}")
+            print(f"Failed to send message to topic {topic}")
+
+    def subscribe(self):
+        down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
+        self.client.subscribe(down_topic_to_sub)
 
     def close_connection(self):
         self.client.loop_stop()
@@ -167,7 +182,6 @@ class EdgeNode:
 
     def on_publish(self, client, userdata, mid):
         self.txPacketsReceived += 1
-        print("Message pubblished", mid)
 
     def on_disconnect(self, client, userdata, rc):
         print("client disconnected with code=", rc)
@@ -176,8 +190,20 @@ class EdgeNode:
         print("Subscribed to topic ", mid)
 
     def on_message(self, client, userdata, msg):
-        print("Received message: ", msg.payload, " from topic: ", msg.topic)
-        self.can_sand_data = True
+        print(f"Edgenode `{self.id_gateway}` received message from topic: `{msg.topic}`")
+        message_decoded = json.loads(msg.payload.decode())
+        phyPayload = message_decoded['phyPayload']
+        result = False
+        for watchdog in self.watchdogs:
+            txInfoStr = json.dumps(message_decoded['txInfo'])
+            txInfo = json.loads(txInfoStr, object_hook=lambda d: SimpleNamespace(**d))
+            result = result or watchdog.receive_message(phyPayload, txInfo)
+
+        if result:
+            self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
+        if msg.state == 0:
+            self.rxPacketsReceivedOK += 1
         self.rxPacketsReceived += 1
-        self.rxPacketsReceivedOK += 1
-        print(msg.payload.decode("utf-8"))
+
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

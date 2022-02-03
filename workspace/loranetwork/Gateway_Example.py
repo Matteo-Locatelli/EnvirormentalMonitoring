@@ -1,10 +1,12 @@
 # import
-import time
-import json
 import base64
-from paho.mqtt.client import Client
+import json
 import random
-from payloads.phy_payload import PhyPayload
+import time
+
+from paho.mqtt.client import Client
+
+from payloads.mac_layer.phy_payload import PhyPayload
 from utils.coder import encodePhyPayloadFromJson, encodePhyPayload
 from utils.payload_util import compute_join_request_mic
 
@@ -20,7 +22,7 @@ netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
 appKey = "a772a9b9c627b3a41370b8a8646e6e80"
 appKeyByte = bytearray([0xa7, 0x72, 0xa9, 0xb9, 0xc6, 0x27, 0xb3, 0xa4, 0x13, 0x70, 0xb8, 0xa8, 0x64, 0x6e, 0x6e, 0x80])
 
-#appSkeyByte = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+# appSkeyByte = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 # gateway id
 idGateway = "f23ad78a721d2334"
 encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decode()
@@ -223,7 +225,7 @@ def join_request_publish(client):
     phyPayload.macPayload.devNonce = devNonce
     phyPayload.mic = "0"
     phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
-    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)  # non ancora funzionante questo
+    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)
 
     up_payload['phyPayload'] = encodePhyPayload(phyPayload)
     msg = json.dumps(up_payload)
