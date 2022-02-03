@@ -1,3 +1,6 @@
+import json
+
+
 class LoraModulation:
     def __init__(self, bandwidth=125, spreadingFactor=7, codeRate="4/5", polarizationInversion=True):
         self.bandwidth = bandwidth

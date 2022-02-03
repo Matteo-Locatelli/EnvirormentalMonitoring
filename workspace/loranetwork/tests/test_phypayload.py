@@ -49,6 +49,8 @@ for mac_command_payload_fopts in mac_command_payload_list_fopts:
     print(getJsonFromObject(mac_command_payload_fopts))
 
 mac_command_payload_list_frmpl = decode_frm_payload_to_mac_commands(appKey,
+                                                                    netSKey,
+                                                                    p.macPayload.fPort,
                                                                     MessageTypeEnum.findByName(p.mhdr.mType).isUplink(),
                                                                     p.macPayload.fhdr.devAddr,
                                                                     p.macPayload.fhdr.fCnt,

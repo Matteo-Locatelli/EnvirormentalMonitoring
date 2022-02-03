@@ -117,6 +117,7 @@ class Watchdog:
         phyPayload_encoded = encodePhyPayload(phy_payload)
         self.fCntUp += 1
         print("SEND DATA WATCHDOG: ", self.deviceName)
+        self.data.append(w_data)
         self.gateway.up_link_publish(phyPayload_encoded)
 
     def __eq__(self, other):

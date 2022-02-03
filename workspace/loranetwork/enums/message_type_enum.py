@@ -24,9 +24,11 @@ class MessageTypeEnum(Enum):
         for message_type in MessageTypeEnum:
             if message_type.getKey() == key:
                 return message_type
+        return None
 
     @staticmethod
     def findByName(name):
         for message_type in MessageTypeEnum:
             if message_type.getName() == name:
                 return message_type
+        return None

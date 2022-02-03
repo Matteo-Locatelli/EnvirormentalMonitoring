@@ -30,11 +30,12 @@ def manage_received_message(watchdog, phyPayloadEncoded):
     if phyPayload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
         watchdog.activate(phyPayload)
         return True
-    elif phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
+    if phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
             phyPayload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.getName():
         if phyPayload.macPayload.fPort == 0:
             manage_mac_commands(watchdog, phyPayload)
         return True
+    return False
 
 
 def manage_mac_commands(watchdog, phyPayload):

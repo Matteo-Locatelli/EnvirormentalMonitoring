@@ -1,4 +1,4 @@
-from jsonpickle import json
+import json
 
 
 class PacketsPerFrequency:
