@@ -13,3 +13,4 @@ workspace/loranetwork/.idea/loranetwork.iml
 workspace/loranetwork/.idea/misc.xml
 workspace/loranetwork/.idea/modules.xml
 workspace/loranetwork/.idea/vcs.xml
+*.pyc
