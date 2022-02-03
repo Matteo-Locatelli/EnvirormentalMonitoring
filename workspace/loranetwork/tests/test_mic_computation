@@ -1,6 +1,6 @@
 import base64
 
-from utils.payload_util import compute_uplink_data_mic
+from utils.payload_util import compute_data_mic
 
 LoRaWANR1_0 = "LoRaWANR1"
 devEUI = "0ac14aad3e6391a1"
@@ -15,4 +15,4 @@ payloads = ["QBj/XgAACAEB1efWJyP4IQZt84BwnYItoRQB", "QBj/XgAABwEBMBBkiV4q1N23Jv5
 
 phy_payload_byte = data = base64.b64decode("YDzW6QGgAQAAei5cHmCQYh72t2aRhxG8qMta/wrr5o0=")
 print("Expected", phy_payload_byte[-4:].hex())
-print(compute_uplink_data_mic(phy_payload_byte, LoRaWANR1_0, 1, 0, 0, netSessionKey, False))
+print(compute_data_mic(phy_payload_byte, LoRaWANR1_0, 1, 0, 0, netSessionKey, False))

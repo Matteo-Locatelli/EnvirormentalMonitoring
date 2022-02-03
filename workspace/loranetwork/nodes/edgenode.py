@@ -157,9 +157,9 @@ class EdgeNode:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            print(f"Send message to topic `{topic}`")
-        else:
-            print(f"Failed to send message to topic {topic}")
+            return print(f"Send message to topic `{topic}`")
+
+        return print(f"Failed to send message to topic {topic}")
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway

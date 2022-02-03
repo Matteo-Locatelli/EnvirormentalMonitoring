@@ -38,8 +38,7 @@ class ThreadWatchdog(Thread):
                     power = self.watchdog.txInfo.power
 
                 self.watchdog.batteryLevel -= getDecreaseBatteryLevel(self.watchdog.timetosend, spreadingFactor, power)
-                if self.watchdog.batteryLevel < 0:
-                    self.watchdog.batteryLevel = 0
+                self.watchdog.batteryLevel = max(self.watchdog.batteryLevel,0)
 
             if (currentMillis - self.previousMillisS) > self.watchdog.timetosend:
                 self.criticalSectionLock.acquire()

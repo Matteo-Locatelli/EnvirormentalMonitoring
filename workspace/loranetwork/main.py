@@ -1,3 +1,4 @@
+"""Main module starting the application"""
 import math
 import threading
 import time
@@ -26,8 +27,7 @@ def getDevices():
         device_list.extend(resp.result)
         if resp.total_count <= (len(resp.result) + offset):
             break
-        else:
-            offset += len(resp.result)
+        offset += len(resp.result)
     return device_list
 
 
@@ -40,8 +40,7 @@ def getGateways():
         gateway_list.extend(resp.result)
         if resp.total_count <= (len(resp.result) + offset):
             break
-        else:
-            offset += len(resp.result)
+        offset += len(resp.result)
     return gateway_list
 
 

@@ -28,7 +28,7 @@ class Frame:
         if not isinstance(other, PhyPayload):
             # don't attempt to compare against unrelated types
             return NotImplemented
-        return self.adr.__eq__(other.adr)
+        return self.bytes.__eq__(other.bytes)
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
