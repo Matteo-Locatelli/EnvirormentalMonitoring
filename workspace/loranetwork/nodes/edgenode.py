@@ -125,7 +125,7 @@ class EdgeNode:
 
         self.publish(stats_topic, stats_payload)
 
-    def up_link_publish(self, phy_payload):
+    def up_link_publish(self, phy_payload, txInfo=TxInfo()):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
@@ -133,7 +133,8 @@ class EdgeNode:
         uplink_id = base64.b64encode(randstr.encode()).decode()
         rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                         crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
-        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
+
+        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=txInfo, rxInfo=rxInfo)
 
         self.publish(up_topic, up_link_payload)
 
