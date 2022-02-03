@@ -230,8 +230,8 @@ def decodePhyPayload(phy_payload_encoded):
 
     if major != MajorTypeEnum.LoRaWANR1:
         raise Exception("Lorawan version must be 1.0 or 1.1")
-    else:
-        phyPayload.mhdr.major = major.getName()
+
+    phyPayload.mhdr.major = major.getName()
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
         print(" *** Join-request")
@@ -259,8 +259,8 @@ def decodePhyPayload(phy_payload_encoded):
         phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
         phyPayload.mic = mic.hex()
         # print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
-    elif mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.CONFIRMED_DATA_UP \
-            or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
+    elif mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
+                   MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
         phyPayload.mhdr.mType = mtype.getName()
         macPayload = MacPayload()
 
@@ -308,13 +308,13 @@ def encodePhyPayload(phyPayload):
         data += nonce
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
-    elif mtype == MessageTypeEnum.JOIN_ACCEPT:
+    if mtype == MessageTypeEnum.JOIN_ACCEPT:
         data += (mtype.getKey() << 5).to_bytes(1, 'big')
         data += base64.b64decode(phyPayload.macPayload.bytes.encode())
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
-    elif mtype == MessageTypeEnum.CONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_UP \
-            or mtype == MessageTypeEnum.CONFIRMED_DATA_UP or mtype == MessageTypeEnum.UNCONFIRMED_DATA_DOWN:
+    if mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
+                   MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
 
         data += (mtype.getKey() << 5).to_bytes(1, 'big')
 
@@ -328,8 +328,9 @@ def encodePhyPayload(phyPayload):
         data += int(phyPayload.mic, 16).to_bytes(4, 'big')
 
         return base64.b64encode(data).decode()
-    else:
-        print("Unsupported type")
+
+    print("Unsupported type")
+    return None
 
 
 def encodePhyPayloadFromJson(json_packet):

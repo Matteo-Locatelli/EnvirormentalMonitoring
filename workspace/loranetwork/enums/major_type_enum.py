@@ -16,9 +16,11 @@ class MajorTypeEnum(Enum):
         for major_type in MajorTypeEnum:
             if major_type.getKey() == key:
                 return major_type
+        return None
 
     @staticmethod
     def findByName(name):
         for major_type in MajorTypeEnum:
             if major_type.getName() == name:
                 return major_type
+        return None

@@ -24,9 +24,11 @@ class MacCommandEnum(Enum):
         for mac_command in MacCommandEnum:
             if mac_command.getKey() == key and mac_command.isUplink() == is_uplink:
                 return mac_command
+        return None
 
     @staticmethod
     def findByName(name, is_uplink):
         for mac_command in MacCommandEnum:
             if mac_command.getName() == name and mac_command.isUplink() == is_uplink:
                 return mac_command
+        return None
