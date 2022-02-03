@@ -2,6 +2,7 @@ import json
 import base64
 import time
 import random
+from types import SimpleNamespace
 from typing import TypeVar
 
 from paho.mqtt.client import Client
@@ -124,7 +125,7 @@ class EdgeNode:
 
         self.publish(stats_topic, stats_payload)
 
-    def up_link_publish(self, phy_payload):
+    def up_link_publish(self, phy_payload, txInfo=TxInfo()):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
@@ -132,7 +133,8 @@ class EdgeNode:
         uplink_id = base64.b64encode(randstr.encode()).decode()
         rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                         crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
-        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=TxInfo(), rxInfo=rxInfo)
+
+        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=txInfo, rxInfo=rxInfo)
 
         self.publish(up_topic, up_link_payload)
 
@@ -193,7 +195,9 @@ class EdgeNode:
         phyPayload = message_decoded['phyPayload']
         result = False
         for watchdog in self.watchdogs:
-            result = result or watchdog.receive_message(phyPayload)
+            txInfoStr = json.dumps(message_decoded['txInfo'])
+            txInfo = json.loads(txInfoStr, object_hook=lambda d: SimpleNamespace(**d))
+            result = result or watchdog.receive_message(phyPayload, txInfo)
 
         if result:
             self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])

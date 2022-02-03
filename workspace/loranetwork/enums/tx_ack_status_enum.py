@@ -7,7 +7,7 @@ class TxAckStatusEnum(Enum):
     TOO_LATE = 2
     TOO_EARLY = 3
     COLLISION_PACKET = 4
-    COLLISION_BEACON = 5;
+    COLLISION_BEACON = 5
     TX_FREQ = 6
     TX_POWER = 7
     GPS_UNLOCKED = 8
