@@ -15,6 +15,9 @@ class ThreadWatchdog(Thread):
         self.threadLock = threadLock #serve per non accedere allo stesso gateway contemporaneamente
         self.criticalSectionLock = criticalSectionLock
         self._running = True
+        self.previousMillisS = 0
+        self.previousMillisR = 0
+        self.previousMillisBatteryUpdate = 0
         self.timetoupdate = 1000
 
     def run(self):
@@ -26,10 +29,10 @@ class ThreadWatchdog(Thread):
         while self._running:
             currentMillis = round(time.time() * 1000)
 
-            if (currentMillis - self.watchdog.previousMillisBatteryUpdate) > self.timetoupdate:
+            if (currentMillis - self.previousMillisBatteryUpdate) > self.timetoupdate:
                 spreadingFactor = None
                 power = None
-                self.watchdog.previousMillisBatteryUpdate = currentMillis
+                self.previousMillisBatteryUpdate = currentMillis
                 if self.watchdog.txInfo is not None:
                     spreadingFactor = self.watchdog.txInfo.loRaModulationInfo.spreadingFactor
                     power = self.watchdog.txInfo.power
@@ -38,13 +41,13 @@ class ThreadWatchdog(Thread):
                 if self.watchdog.batteryLevel < 0:
                     self.watchdog.batteryLevel = 0
 
-            if (currentMillis - self.watchdog.previousMillisS) > self.watchdog.timetosend:
+            if (currentMillis - self.previousMillisS) > self.watchdog.timetosend:
                 self.criticalSectionLock.acquire()
                 self.threadLock.acquire()
                 self.watchdog.send_data()
                 self.threadLock.release()
                 self.criticalSectionLock.release()
-                self.watchdog.previousMillisS = currentMillis
+                self.previousMillisS = currentMillis
 
     def stop(self):
         self._running = False

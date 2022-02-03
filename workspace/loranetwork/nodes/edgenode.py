@@ -49,7 +49,7 @@ class EdgeNode:
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
 
-    def __init__(self, broker, port, id_gateway, name="", ip="localhost", organization_id=None, network_server_id=None):
+    def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None, network_server_id=None):
         self.broker = broker
         self.port = port
         self.ip = ip

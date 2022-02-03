@@ -63,10 +63,7 @@ class Watchdog:
         self.data = []
         self.timetosend = 10000  # timetosend ms
         self.timetoreceive = 40000  # timetoreceive in ms
-        self.previousMillisS = 0
-        self.previousMillisR = 0
         self.txInfo = None
-        self.previousMillisBatteryUpdate = 0
 
     def join(self):
         phy_payload = PhyPayload()
