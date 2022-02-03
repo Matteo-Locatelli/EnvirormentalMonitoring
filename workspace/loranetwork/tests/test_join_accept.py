@@ -4,7 +4,7 @@ from utils.coder import decodePhyPayload, decode_join_accept_mac_payload
 from utils.payload_util import getJsonFromObject, compute_join_request_mic
 
 app_key = "A772A9B9C627B3A41370B8A8646E6E80".lower()
-app_k_t ="00112233445566778899aabbccddeeff"
+app_k_t = "00112233445566778899aabbccddeeff"
 phyPayload_byte = "IFdUEzW1ejR2C6P7werVeoWYIRhyLT3m5EGdGmD1E4A0"
 p_t = "IEk+61H7ohFvgQ7bN0KXUUI="
 dev_nonce = 60750

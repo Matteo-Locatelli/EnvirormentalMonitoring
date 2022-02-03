@@ -1,6 +1,6 @@
 from enums.message_type_enum import MessageTypeEnum
-from utils.coder import decodePhyPayload, encodePhyPayload, encodePhyPayloadFromJson, \
-    decode_data_payload_to_mac_commands, decode_frm_payload_to_mac_commands, decode_fopts_payload_to_mac_commands
+from utils.coder import decodePhyPayload, encodePhyPayloadFromJson, \
+    decode_frm_payload_to_mac_commands, decode_fopts_payload_to_mac_commands
 from utils.payload_util import getJsonFromObject
 
 appKey = "a772a9b9c627b3a41370b8a8646e6e80"

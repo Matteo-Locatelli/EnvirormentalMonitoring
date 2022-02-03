@@ -1,9 +1,8 @@
-
 import json
-
-from Crypto.Hash import CMAC
-from Crypto.Cipher import AES
 from typing import TypeVar
+
+from Crypto.Cipher import AES
+from Crypto.Hash import CMAC
 
 from enums.lorawan_version_enum import LorawanVersionEnum
 

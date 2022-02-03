@@ -3,10 +3,10 @@ import json
 
 class MacCommandPayload:
     def __init__(self, battery=None, margin=None, chIndex=None, freq=None, maxDR=None, minDR=None):
-        #DevStatusAns
+        # DevStatusAns
         self.battery = battery
         self.margin = margin
-        #NewChannelReq
+        # NewChannelReq
         self.chIndex = chIndex
         self.freq = freq
         self.maxDR = maxDR

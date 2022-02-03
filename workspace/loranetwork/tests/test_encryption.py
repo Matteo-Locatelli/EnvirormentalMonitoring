@@ -1,13 +1,10 @@
-import json
+import base64
 import random
 
-from enums.mac_command_enum import MacCommandEnum
-from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import Frame
 from payloads.watchdog_data import WatchdogData
 from utils.coder import encodeDevAddr, decode_frm_payload_to_mac_commands, encode_mac_commands_to_frm_payload
 from utils.payload_util import encrypt_frm_payload, getJsonFromObject
-import base64
 
 appKey = "a772a9b9c627b3a41370b8a8646e6e80"
 string = "wdb/xABHjN5AXLeuWZs="
@@ -42,7 +39,8 @@ w_data = WatchdogData()
 w_data.battery = 25
 w_data.humidity = round(random.gauss(70, 20), 2)
 w_data.temperature = round(random.gauss(5, 6), 2)
-frame_payload = bytearray(base64.b64decode("jBb5TIcTUoCP+kW9ZwI/mjJdVqBD2CioVK9yPn6KBKcwRXvOTZUcNYf1JRnq1QlUwo0AX6Zly6Q="))
+frame_payload = bytearray(
+    base64.b64decode("jBb5TIcTUoCP+kW9ZwI/mjJdVqBD2CioVK9yPn6KBKcwRXvOTZUcNYf1JRnq1QlUwo0AX6Zly6Q="))
 dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
 ecrypted_frame_payload = encrypt_frm_payload(appSKey, netSKey, 1, True, dev_addr_byte, 11, frame_payload)
 string_ecn = base64.b64encode(ecrypted_frame_payload).decode()
@@ -51,6 +49,4 @@ print(string_ecn)
 frame_payload = bytearray(base64.b64decode(string_ecn.encode()))
 ecrypted_frame_payload = encrypt_frm_payload(appSKey, netSKey, 1, True, dev_addr_byte, 9, frame_payload)
 string_ecn = ecrypted_frame_payload.decode()
-#print(string_ecn)
-
-
+# print(string_ecn)

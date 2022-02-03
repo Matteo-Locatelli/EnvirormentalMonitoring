@@ -1,5 +1,6 @@
 import base64
 import unittest
+
 from utils import payload_util
 
 
@@ -39,7 +40,6 @@ class TestPayloadUtil(unittest.TestCase):
 
         self.mic_join_request = self.json_join_request['mic']
 
-
         # Join accept
         self.payload_join_accept = "IKGT2fFHOFY3V17VpslbSz+deWV05XJwRPti54vmD6Nw"
 
@@ -55,7 +55,6 @@ class TestPayloadUtil(unittest.TestCase):
         }
 
         self.mic_join_accept = self.json_join_accept['mic']
-
 
         # Compute data
         self.payload_compute_data = "QPt/dgEABQABYVH7mg=="
@@ -88,7 +87,6 @@ class TestPayloadUtil(unittest.TestCase):
 
         self.fCnt_compute_data = self.json_compute_data["macPayload"]["fhdr"]["fCnt"]
 
-
     def tearDown(self):
         print("\n TearDown")
 
@@ -110,7 +108,7 @@ class TestPayloadUtil(unittest.TestCase):
         print("\n Test Compute Uplink Data Mic")
         self.assertEqual(
             payload_util.compute_data_mic(base64.b64decode(self.payload_compute_data.encode()), self.LoRaWANR1_0,
-                                                 self.fCnt_compute_data, 0, 0, self.netSKey, True),
+                                          self.fCnt_compute_data, 0, 0, self.netSKey, True),
             self.mic_compute_data)
 
     # Comparison between the mic in the JSON "join_accept" object and the mic computed by the function

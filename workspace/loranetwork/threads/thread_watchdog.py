@@ -1,5 +1,5 @@
-from threading import Thread
 import time
+from threading import Thread
 
 from utils.api_utils import getDeviceKeys
 
@@ -12,7 +12,7 @@ class ThreadWatchdog(Thread):
     def __init__(self, watchdog, threadLock, criticalSectionLock):
         Thread.__init__(self)
         self.watchdog = watchdog
-        self.threadLock = threadLock #serve per non accedere allo stesso gateway contemporaneamente
+        self.threadLock = threadLock  # serve per non accedere allo stesso gateway contemporaneamente
         self.criticalSectionLock = criticalSectionLock
         self._running = True
         self.previousMillisS = 0
@@ -52,5 +52,3 @@ class ThreadWatchdog(Thread):
     def stop(self):
         self._running = False
         print("thread_watchdog stoped")
-
-

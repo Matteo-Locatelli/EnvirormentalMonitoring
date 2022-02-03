@@ -1,4 +1,5 @@
 import unittest
+
 from utils import coder, payload_util
 
 
@@ -15,7 +16,7 @@ class TestCoder(unittest.TestCase):
     def setUp(self):
         print("\n SetUp")
         self.payloads = ["YKmbBwGgAQAA3s0o6XpEg709qE45mZK/hfM07NFXhiM=", "gKmbBwEANAEBhSve0Q==",
-                    "YKmbBwGgAAAAuX0joM23ehlfKcOOpnv1iqLWLyDekH8=", "gKmbBwEANAEBhSve0Q=="]
+                         "YKmbBwGgAAAAuX0joM23ehlfKcOOpnv1iqLWLyDekH8=", "gKmbBwEANAEBhSve0Q=="]
         self.json0 = {
             "mhdr": {
                 "mType": "UnconfirmedDataDown",

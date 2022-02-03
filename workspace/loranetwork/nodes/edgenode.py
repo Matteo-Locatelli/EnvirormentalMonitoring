@@ -1,26 +1,25 @@
-import json
 import base64
-import time
+import json
 import random
+import time
+from datetime import datetime
 from types import SimpleNamespace
 from typing import TypeVar
 
 from paho.mqtt.client import Client
-from datetime import datetime
 
+from enums.connection_state_enum import ConnectionStateEnum
 from enums.crc_status_enum import CRCStatusEnum
 from enums.tx_ack_status_enum import TxAckStatusEnum
+# Payload message types
+from payloads.conn_payload import ConnPayload
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
+from payloads.stats_payload import StatsPayload
 from payloads.tx_ack_item_payload import TxAckItemPayload
 from payloads.tx_ack_payload import TxAckPayload
 from payloads.up_payload import UpPayload
 from utils.payload_util import getJsonFromObject
-
-# Payload message types
-from payloads.conn_payload import ConnPayload
-from payloads.stats_payload import StatsPayload
-from enums.connection_state_enum import ConnectionStateEnum
 
 T = TypeVar('T')
 
@@ -49,7 +48,8 @@ class EdgeNode:
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
 
-    def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None, network_server_id=None):
+    def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None,
+                 network_server_id=None):
         self.broker = broker
         self.port = port
         self.ip = ip

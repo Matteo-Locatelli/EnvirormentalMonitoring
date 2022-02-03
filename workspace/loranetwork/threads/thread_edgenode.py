@@ -1,5 +1,5 @@
-from threading import Thread
 import time
+from threading import Thread
 
 
 class ThreadEdgenode(Thread):
@@ -20,4 +20,3 @@ class ThreadEdgenode(Thread):
     def stop(self):
         self.gateway.close_connection()
         self._running = False
-

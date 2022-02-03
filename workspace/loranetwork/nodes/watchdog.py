@@ -1,19 +1,18 @@
+import base64
 import json
+import random
 
-from utils.downlink_message_manager import manage_received_message
 from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import PhyPayload, MacPayload, FHDR, Frame
-import random
-import base64
-
+from payloads.watchdog_data import WatchdogData
 from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload, \
     encodeDevAddr
+from utils.downlink_message_manager import manage_received_message
 from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic, encrypt_frm_payload
-from payloads.watchdog_data import WatchdogData
 
 
 class Tags:

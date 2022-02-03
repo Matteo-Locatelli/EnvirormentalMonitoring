@@ -3,8 +3,8 @@ import base64
 from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.message_type_enum import MessageTypeEnum
-from utils.coder import decodePhyPayload, decode_join_accept_mac_payload, decode_frm_payload_to_mac_commands
-from utils.payload_util import compute_join_request_mic, compute_join_accept_mic, compute_data_mic, getJsonFromObject
+from utils.coder import decodePhyPayload, decode_frm_payload_to_mac_commands
+from utils.payload_util import compute_join_accept_mic, compute_data_mic, getJsonFromObject
 
 
 def manage_received_message(watchdog, phyPayloadEncoded):

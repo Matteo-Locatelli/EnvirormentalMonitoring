@@ -1,5 +1,5 @@
-from utils.coder import decodePhyPayload, encodePhyPayload, encodePhyPayloadFromJson
 import base64
+
 from utils.payload_util import compute_uplink_data_mic
 
 LoRaWANR1_0 = "LoRaWANR1"
