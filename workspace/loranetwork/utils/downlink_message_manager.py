@@ -32,7 +32,8 @@ def manage_received_message(watchdog, phyPayloadEncoded):
         return True
     elif phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
             phyPayload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.getName():
-        manage_mac_commands(watchdog, phyPayload)
+        if phyPayload.macPayload.fPort == 0:
+            manage_mac_commands(watchdog, phyPayload)
         return True
 
 

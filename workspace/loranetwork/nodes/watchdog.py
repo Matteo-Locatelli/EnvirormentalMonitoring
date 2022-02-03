@@ -145,7 +145,7 @@ class Watchdog:
         self.dev_addr = join_accept_mac_payload.dev_addr
         self.batteryLevelUnavailable = False
         self.batteryLevel = 254
-        self.margin = 31
+        self.margin = 7
         print(getJsonFromObject(join_accept_mac_payload))
         self.active = True
 
