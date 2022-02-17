@@ -32,3 +32,4 @@ workspace/loranetwork/payloads/info/__pycache__/rx_info.cpython-38.pyc
 workspace/loranetwork/payloads/info/__pycache__/tx_info.cpython-38.pyc
 workspace/loranetwork/utils/__pycache__/payload_util.cpython-38.pyc
 *.pyc
+*.pyc

@@ -11,7 +11,7 @@ from threads.thread_watchdog import ThreadWatchdog
 from utils.api_utils import getDeviceKeys, getDeviceList, getGatewayList
 
 # broker address
-broker = "172.18.200.139"
+broker = "172.22.83.253"
 port = 1883
 
 # configuration
