@@ -1,0 +1,25 @@
+
+https://www.youtube.com/watch?v=yCK3easuYm4&ab_channel=DavidBombal
+
+Indirizzo ip di windows (su cmd)
+ipconfig
+risultato-->Guardare sotto la sezione Scheda LAN wireless Wi-Fi indirizzo IPv4
+
+Indirizzo ip di ubunutu (su ubuntu)
+ip addr | grep eth0
+risultato-->(172.28.225.99/20)
+nota: questo ip può cambiare, ogni volta che si spegne e si riaccende è bene controllare
+
+Per consentire la connessione da ubunutu a windows:
+netsh interface portproxy add v4tov4 listenport=3390 listenaddress=0.0.0.0 connectport=3390 connectaddress=172.28.225.99/20
+bisogna far girare questo comando ogni volta perchè cambia l'ip
+
+a questo punto bisogna andare sul pannello di controllo --> Rete internet --> centro connessioni di rete
+							--> windows defender firewall -> impostazioni avanzate 
+							--> regole connessioni in entrata --> nuova regola (con tasto dx)
+							--> Selezionare porta, avanti --> mettere porta 3390(o una qualsiasi libera)					
+							--> avanti fino alla fine
+La cosa della porta va fatta solo una volta poi basta.
+Ora sul codice python è da mettere in broker l'indirizzo ip di ubuntu (172.28.225.99 nel mio caso)
+Poi gira tutto (in teoria)
+

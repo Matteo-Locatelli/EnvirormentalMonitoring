@@ -1,0 +1,1 @@
+Installazione dello stack chirpstack su macchina virtuale Ubuntu e set up dell'ambiente di lavoro.

@@ -9,7 +9,7 @@ class DelayTimingInfo:
 
 
 class TxInfo:
-    def __init__(self, frequency=922200000, modulation="LORA", loRaModulationInfo=LoraModulation(), power=None, board=0,
+    def __init__(self, frequency=868100000, modulation="LORA", loRaModulationInfo=LoraModulation(), power=14, board=0,
                  antenna=0, timing="DELAY", delayTimingInfo=DelayTimingInfo(), context=""):
         self.frequency = frequency
         self.modulation = modulation

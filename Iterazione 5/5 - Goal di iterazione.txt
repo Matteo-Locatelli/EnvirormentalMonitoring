@@ -1,0 +1,2 @@
+Implementazione requisito R1. Questo comprende l'introduzione di un mapek-loop per 
+la diagnosi dei guasti.
