@@ -12,13 +12,13 @@ from enums.connection_state_enum import ConnectionStateEnum
 from enums.crc_status_enum import CRCStatusEnum
 from enums.tx_ack_status_enum import TxAckStatusEnum
 # Payload message types
-from payloads.conn_payload import ConnPayload
+from payloads.edgenode.conn_payload import ConnPayload
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
-from payloads.stats_payload import StatsPayload
-from payloads.tx_ack_item_payload import TxAckItemPayload
-from payloads.tx_ack_payload import TxAckPayload
-from payloads.up_payload import UpPayload
+from payloads.edgenode.stats_payload import StatsPayload
+from payloads.edgenode.tx_ack_item_payload import TxAckItemPayload
+from payloads.edgenode.tx_ack_payload import TxAckPayload
+from payloads.edgenode.up_payload import UpPayload
 from utils.payload_util import getJsonFromObject
 
 T = TypeVar('T')
@@ -42,6 +42,8 @@ def get_up_payload(message_type, major_type, phy_payload):
 class EdgeNode:
     # Number of gateways
     number_of_gw = 0
+
+    # Topics
     conn_topic = "gateway/%s/state/conn"
     up_topic = "gateway/%s/event/up"
     ack_topic = "gateway/%s/event/ack"
@@ -166,6 +168,7 @@ class EdgeNode:
         self.client.subscribe(down_topic_to_sub)
 
     def close_connection(self):
+        self.conn_topic(ConnectionStateEnum.OFFLINE.name)
         self.client.loop_stop()
         self.client.disconnect()
 
@@ -178,16 +181,16 @@ class EdgeNode:
             print("Bad connection Returned code=", rc)
 
     def on_connect_fail(self):
-        print("connection failed")
+        print(f"Edgenode `{self.id_gateway}` connection failed")
 
     def on_publish(self, client, userdata, mid):
         self.txPacketsReceived += 1
 
     def on_disconnect(self, client, userdata, rc):
-        print("client disconnected with code=", rc)
+        print(f"Edgenode `{self.id_gateway}` disconnected with code=`{rc}`")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print("Subscribed to topic ", mid)
+        print(f"Edgenode `{self.id_gateway}` Subscribed to topic `{mid}`")
 
     def on_message(self, client, userdata, msg):
         print(f"Edgenode `{self.id_gateway}` received message from topic: `{msg.topic}`")

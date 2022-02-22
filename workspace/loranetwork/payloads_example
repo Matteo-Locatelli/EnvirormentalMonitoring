@@ -97,3 +97,110 @@ ping_payload = {
   ],
   "gatewayID": "H2qkXp7Xeng="
 }
+
+#Apps server
+
+join_event_payload = {
+  "applicationID": "1",
+  "applicationName": "test-chirpstack-application",
+  "deviceName": "Device-1",
+  "devEUI": "CsFKrT5jkaE=",
+  "devAddr": "AB7GNA==",
+  "rxInfo": [
+    {
+      "gatewayID": "H2qkXp7Xeng=",
+      "time": "2022-02-21T23:11:36Z",
+      "timeSinceGPSEpoch": "1329520.296s",
+      "rssi": -60,
+      "loRaSNR": 7,
+      "channel": 7,
+      "rfChain": 0,
+      "board": 0,
+      "antenna": 0,
+      "fineTimestampType": "NONE",
+      "context": "YhQcKA==",
+      "uplinkID": "3oF7ua+/SYyeYZ6UGP40Tw==",
+      "crcStatus": "CRC_OK"
+    }
+  ],
+  "txInfo": {
+    "frequency": 867900000,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 12,
+      "codeRate": "4/5",
+      "polarizationInversion": false
+    }
+  },
+  "dr": 0,
+  "tags": {},
+  "publishedAt": "2022-02-21T23:11:36.796939646Z"
+}
+
+topic: application/1/device/0ac14aad3e6391a1/event/join
+up_event_payload = {
+  "applicationID": "1",
+  "applicationName": "test-chirpstack-application",
+  "deviceName": "Device-1",
+  "devEUI": "CsFKrT5jkaE=",
+  "rxInfo": [
+    {
+      "gatewayID": "H2qkXp7Xeng=",
+      "time": "2022-02-21T23:12:06Z",
+      "timeSinceGPSEpoch": "1329520.326s",
+      "rssi": -60,
+      "loRaSNR": 7,
+      "channel": 2,
+      "rfChain": 0,
+      "board": 0,
+      "antenna": 0,
+      "location": {
+        "latitude": 45.64721335397582,
+        "longitude": 9.597843157441028,
+        "altitude": 0,
+        "source": "UNKNOWN",
+        "accuracy": 0
+      },
+      "fineTimestampType": "NONE",
+      "context": "YhQcRg==",
+      "uplinkID": "JiO0FJmbSYaF721KJOFFCQ==",
+      "crcStatus": "CRC_OK"
+    }
+  ],
+  "txInfo": {
+    "frequency": 868500000,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 12,
+      "codeRate": "4/5",
+      "polarizationInversion": False
+    }
+  },
+  "adr": True,
+  "dr": 0,
+  "fCnt": 357,
+  "fPort": 1,
+  "data": "eyJodW1pZGl0eSI6NX0=",
+  "objectJSON": "",
+  "tags": {},
+  "confirmedUplink": False,
+  "devAddr": "AB7GNA==",
+  "publishedAt": "2022-02-21T23:12:06.783005081Z",
+  "deviceProfileID": "2946f67e-54bb-4f33-a9fd-7a4d334fec19",
+  "deviceProfileName": "test-chirpstack-device-profile"
+}
+
+status_payload = {
+  "applicationID": "1",
+  "applicationName": "test-chirpstack-application",
+  "deviceName": "Device-1",
+  "devEUI": "CsFKrT5jkaE=",
+  "margin": -3,
+  "externalPowerSource": true,
+  "batteryLevelUnavailable": false,
+  "batteryLevel": 0,
+  "tags": {},
+  "publishedAt": "2022-02-22T14:06:11.588528302Z"
+}

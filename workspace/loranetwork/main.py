@@ -121,6 +121,7 @@ def main():
         thread_gateway.start()
     for thread_watchdog in thread_watchdog_list:
         thread_watchdog.start()
+        time.sleep(2)
 
     time.sleep(1)
 
