@@ -1,0 +1,2 @@
+Implementazione del funzionamento di un edgenode e simulazione.
+Questo comprende dettagliare la componente EdgeNodeSoftware

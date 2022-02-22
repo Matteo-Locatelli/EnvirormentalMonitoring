@@ -1,0 +1,99 @@
+conn_payload = {
+    "gatewayID": "cnb/AC4GLBg=",
+    "state": "ONLINE"
+}
+
+join_payload = {
+    "rxInfo": [
+        {
+            "gatewayID": "f23ad78a721d2334",
+            "time": datetime.now().strftime("%H:%M:%S"),
+            "timeSinceGPSEpoch": "1326832.347s",
+            "rssi": -60,
+            "loRaSNR": 7,
+            "channel": 0,
+            "rfChain": 0,
+            "board": 0,
+            "antenna": 0,
+            "location": {
+                "latitude": 45.64721335397582,
+                "longitude": 9.597843157441028,
+                "altitude": 0,
+                "source": "UNKNOWN",
+                "accuracy": 0
+            },
+            "fineTimestampType": "NONE",
+            "context": "YesMui==",
+            "uplinkID": str(str(datetime.now()).encode()),
+            "crcStatus": "CRC_OK"
+        }
+    ],
+    "txInfo": {
+        "frequency": 433175000,
+        "modulation": "LORA",
+        "loRaModulationInfo": {
+            "bandwidth": 125,
+            "spreadingFactor": 7,
+            "codeRate": "4/5",
+            "polarizationInversion": False
+        }
+    },
+    "phyPayload": {
+        "mhdr": {
+            "mType": "JoinRequest",
+            "major": "LoRaWANR1"
+        },
+        "macPayload": {
+            "joinEUI": "0000000000000000",
+            "devEUI": "0ac14aad3e6391a1",
+            "devNonce": 3447
+        },
+        "mic": "0a25de1f"
+    }
+}
+
+ping_payload = {
+  "phyPayload": "4A9US9M=",
+  "txInfo": {
+    "gatewayID": "H2qkXp7Xeng=",
+    "frequency": 867500000,
+    "power": 14,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 12,
+      "codeRate": "4/5",
+      "polarizationInversion": false
+    },
+    "board": 0,
+    "antenna": 0,
+    "timing": "IMMEDIATELY",
+    "immediatelyTimingInfo": {},
+    "context": null
+  },
+  "token": 19426,
+  "downlinkID": "S+LS6U/TQs2M3iXof6rV/g==",
+  "items": [
+    {
+      "phyPayload": "4A9US9M=",
+      "txInfo": {
+        "gatewayID": null,
+        "frequency": 867500000,
+        "power": 14,
+        "modulation": "LORA",
+        "loRaModulationInfo": {
+          "bandwidth": 125,
+          "spreadingFactor": 12,
+          "codeRate": "4/5",
+          "polarizationInversion": false
+        },
+        "board": 0,
+        "antenna": 0,
+        "timing": "IMMEDIATELY",
+        "immediatelyTimingInfo": {},
+        "context": null
+      }
+    }
+  ],
+  "gatewayID": "H2qkXp7Xeng="
+}

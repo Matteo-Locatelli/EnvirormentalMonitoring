@@ -1,0 +1,2 @@
+Implementazione del funzionamento di un watchdog e simulazione di quest'ultimo.
+Questo viene fatto dettagliando la componente WatchdogSoftware

@@ -51,3 +51,49 @@ join_payload = {
         "mic": "0a25de1f"
     }
 }
+
+ping_payload = {
+  "phyPayload": "4A9US9M=",
+  "txInfo": {
+    "gatewayID": "H2qkXp7Xeng=",
+    "frequency": 867500000,
+    "power": 14,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 12,
+      "codeRate": "4/5",
+      "polarizationInversion": false
+    },
+    "board": 0,
+    "antenna": 0,
+    "timing": "IMMEDIATELY",
+    "immediatelyTimingInfo": {},
+    "context": null
+  },
+  "token": 19426,
+  "downlinkID": "S+LS6U/TQs2M3iXof6rV/g==",
+  "items": [
+    {
+      "phyPayload": "4A9US9M=",
+      "txInfo": {
+        "gatewayID": null,
+        "frequency": 867500000,
+        "power": 14,
+        "modulation": "LORA",
+        "loRaModulationInfo": {
+          "bandwidth": 125,
+          "spreadingFactor": 12,
+          "codeRate": "4/5",
+          "polarizationInversion": false
+        },
+        "board": 0,
+        "antenna": 0,
+        "timing": "IMMEDIATELY",
+        "immediatelyTimingInfo": {},
+        "context": null
+      }
+    }
+  ],
+  "gatewayID": "H2qkXp7Xeng="
+}
