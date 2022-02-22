@@ -1,6 +1,7 @@
 import time
 from threading import Thread
 
+from enums.bcolors import BColors
 from utils.api_utils import getDeviceKeys
 
 
@@ -50,4 +51,4 @@ class ThreadWatchdog(Thread):
 
     def stop(self):
         self._running = False
-        print("thread_watchdog stoped")
+        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} STOPPED{BColors.ENDC.value}")

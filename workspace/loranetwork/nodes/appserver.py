@@ -3,6 +3,8 @@ import time
 import json
 import base64
 from paho.mqtt.client import Client
+
+from enums.bcolors import BColors
 from utils.app_server_utils import getWatchdogAppServer
 
 
@@ -40,18 +42,19 @@ class AppServer:
             self.client.on_subscribe = self.on_subscribe
             self.client.on_message = self.on_message
 
-            print("Client connect: ", self.client.connect(self.broker, self.port, 60))
+            print(f"{BColors.OKGREEN.value}AppServer "
+                  f"connect: {self.client.connect(self.broker, self.port, 60)} {BColors.ENDC.value}")
             time.sleep(1)
             self.client.loop_start()
 
             while not self.client.is_connected():
-                print("Wait for connection")
+                print(f"{BColors.OKGREEN.value}Wait for connection{BColors.ENDC.value}")
                 time.sleep(1)
 
             print("Client connected!")
         except BaseException as err:
-            print("ERROR: Could not connect to MQTT.")
-            print(f"Unexpected {err=}, {type(err)=}")
+            print(f"{BColors.WARNING.value}ERROR: AppServer Could not connect to MQTT.{BColors.ENDC.value}")
+            print(f"{BColors.FAIL.value}Unexpected {err=}, {type(err)=}{BColors.ENDC.value}")
             self.close_connection()
 
     def subscribe(self, devEUI):
@@ -71,21 +74,21 @@ class AppServer:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.connected_flag = True
-            print("Connected OK Returned code=", rc)
+            print(f"{BColors.OKGREEN.value}Connected OK Returned code={rc}{BColors.ENDC.value}")
         else:
-            print("Bad connection Returned code=", rc)
+            print(f"{BColors.FAIL.value}Bad connection Returned code={rc}{BColors.ENDC.value}")
 
     def on_connect_fail(self):
-        print("AppServer connection failed")
+        print(f"{BColors.FAIL.value}AppServer connection failed{BColors.ENDC.value}")
 
     def on_disconnect(self, client, userdata, rc):
-        print("AppServer disconnected with code=", rc)
+        print(f"{BColors.OKGREEN.value}AppServer disconnected with code={rc}{BColors.ENDC.value}")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print("AppServer subscribed to topic ", mid)
+        print(f"{BColors.OKGREEN.value}AppServer subscribed to topic {mid}{BColors.ENDC.value}")
 
     def on_message(self, client, userdata, msg):
-        print(f"AppServer received message from topic: `{msg.topic}`")
+        print(f"{BColors.OKGREEN.value}AppServer received message from topic: {msg.topic}{BColors.ENDC.value}")
         topic_splitted = msg.topic.split("/")
         topic_type = topic_splitted[-2] + topic_splitted[-1]
         payload_decoded = json.loads(msg.payload.decode())
@@ -95,14 +98,14 @@ class AppServer:
         elif topic_type == "eventup":
             devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
             self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-            print(self.watchdogs[devEUI_decoded].toJson())
+
         elif topic_type == "eventstatus":
             devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
             self.watchdogs[devEUI_decoded].watchdog.batteryLevel = payload_decoded['batteryLevel']
             self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
             self.watchdogs[devEUI_decoded].watchdog.margin = payload_decoded['margin']
             self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-            print(self.watchdogs[devEUI_decoded].toJson())
+            
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

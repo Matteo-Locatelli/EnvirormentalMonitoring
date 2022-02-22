@@ -3,6 +3,7 @@ import struct
 
 from Crypto.Cipher import AES
 
+from enums.bcolors import BColors
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
@@ -40,6 +41,7 @@ def decodeFHDR(data):
     fCnt_byte += bytearray(2)
     fhdr.fCnt = int.from_bytes(fCnt_byte, 'little')
     if len(data) > 7:
+        fhdr.fOpts = []
         fhdr.fOpts.append(Frame(base64.b64encode(data[7:])))
     return fhdr
 
@@ -182,7 +184,7 @@ def decode_join_accept_mac_payload(app_key, dev_nonce, phyPayload):
 
 def decode_fopts_payload_to_mac_commands(is_uplink, frames):
     data = []
-    if frames is None:
+    if frames is None or len(frames) <= 0:
         return data
     for frame in frames:
         data.append(base64.b64decode(frame.bytes))
@@ -191,6 +193,10 @@ def decode_fopts_payload_to_mac_commands(is_uplink, frames):
 
 def decode_frm_payload_to_mac_commands(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, frames):
     data = []
+    if frames is None or len(frames) <= 0:
+        return data
+    if fPort is None or fPort > 0:
+        return data
     for frame in frames:
         data.append(bytearray(base64.b64decode(frame.bytes)))
 
@@ -234,7 +240,7 @@ def decodePhyPayload(phy_payload_encoded):
     phyPayload.mhdr.major = major.getName()
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
-        print(" *** Join-request")
+        #print(" *** Join-request")
         joinEUI = data[1:9]
         devEUI = data[9:17]
         nonce = data[17:19]
@@ -253,7 +259,7 @@ def decodePhyPayload(phy_payload_encoded):
         # print("  Nonce:  %s" % nonce.hex())
         # print("  MIC: %s" % mic.hex())
     elif mtype == MessageTypeEnum.JOIN_ACCEPT:
-        print(" *** Join Accept")
+        #print(" *** Join Accept")
         phyPayload.mhdr.mType = mtype.getName()
         phyPayload.macPayload = MacPayload()
         phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
@@ -262,19 +268,30 @@ def decodePhyPayload(phy_payload_encoded):
     elif mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
                    MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
         phyPayload.mhdr.mType = mtype.getName()
+        data_len = len(macPayloadByte)
         macPayload = MacPayload()
 
+        if data_len < 7:
+            raise Exception("lorawan: at least 7 bytes needed to decode FHDR")
         fCtrl = FCTRL(macPayloadByte[4:5])
+
+        if data_len < 7 + fCtrl.fOptsLen:
+            raise Exception("lorawan: not enough bytes to decode FHDR")
         macPayload.fhdr = decodeFHDR(macPayloadByte[0:7 + fCtrl.fOptsLen])
-        macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
+
+        if data_len > 7 + fCtrl.fOptsLen:
+            macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
+
         if len(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:]) > 0:
+            if macPayload.fPort is not None and macPayload.fPort == 0 and fCtrl.fOptsLen > 0:
+                raise Exception("lorawan: FPort must not be 0 when FOpts are set")
             macPayload.frmPayload.append(
                 Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
 
         phyPayload.macPayload = macPayload
         phyPayload.mic = mic.hex()
 
-        print(" *** ", mtype.getName())
+        #print(" *** ", mtype.getName())
 
         # print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
         # print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
@@ -283,16 +300,14 @@ def decodePhyPayload(phy_payload_encoded):
         # print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
         # print("  mic: %04s " % phyPayload.mic)
     else:
-        print("Unsupported type")
+        print(f"{BColors.WARNING.value}Unsupported type{BColors.ENDC.value}")
 
     return phyPayload
 
 
 def encodePhyPayload(phyPayload):
-    print("encodePhyPayload")
     mtype = MessageTypeEnum.findByName(phyPayload.mhdr.mType)
     data = bytearray()
-    print(" *** encoding", mtype.getName())
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
         joinEUI = int(phyPayload.macPayload.joinEUI, 16).to_bytes(8, 'big')
@@ -329,7 +344,7 @@ def encodePhyPayload(phyPayload):
 
         return base64.b64encode(data).decode()
 
-    print("Unsupported type")
+    print(f"{BColors.WARNING.value}Unsupported type{BColors.ENDC.value}")
     return None
 
 

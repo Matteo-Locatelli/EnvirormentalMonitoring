@@ -1,12 +1,11 @@
 from datetime import datetime
-import json
 import base64
+
 from nodes.watchdog import Watchdog
 from nodes.watchdog_appserver import WatchdogAppServer
 
 
 def getWatchdogAppServer(payload_msg):
-    print("getWatchdogAppServer")
     watchdog_app_server = WatchdogAppServer()
     watchdog = Watchdog(applicationID=payload_msg['applicationID'],
                         deviceName=payload_msg['deviceName'],
@@ -16,3 +15,5 @@ def getWatchdogAppServer(payload_msg):
     watchdog_app_server.last_seen = round(datetime.now().timestamp())
     print(watchdog_app_server.toJson())
     return watchdog_app_server
+
+

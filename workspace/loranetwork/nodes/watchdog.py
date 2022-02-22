@@ -2,6 +2,7 @@ import base64
 import json
 import random
 
+from enums.bcolors import BColors
 from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
@@ -22,7 +23,6 @@ class Tags:
 
     def __eq__(self, other):
         if not isinstance(other, Tags):
-            # don't attempt to compare against unrelated types
             return NotImplemented
         return self.ok.__eq__(other.ok)
 
@@ -61,7 +61,7 @@ class Watchdog:
         self.fCntUp = 0  # da incrementare ad ogni invio
         self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
-        self.timetosend = 10000  # timetosend ms
+        self.timetosend = 20000  # timetosend ms
         self.timetoreceive = 40000  # timetoreceive in ms
         self.txInfo = txInfo
 
@@ -117,7 +117,7 @@ class Watchdog:
                                            self.net_skey, True)
         phyPayload_encoded = encodePhyPayload(phy_payload)
         self.fCntUp += 1
-        print("SEND DATA WATCHDOG: ", self.deviceName)
+        print(f"{BColors.HEADER.value}SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
         self.data.append(w_data)
         self.gateway.up_link_publish(phyPayload_encoded)
 
@@ -144,8 +144,8 @@ class Watchdog:
         self.batteryLevelUnavailable = False
         self.batteryLevel = 254
         self.margin = 7
-        print(getJsonFromObject(join_accept_mac_payload))
         self.active = True
+        print(f"{BColors.HEADER.value}ACTIVATE WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
 
     def receive_message(self, phyPayload, txInfo):
         result = manage_received_message(self, phyPayload)
@@ -190,6 +190,13 @@ class Watchdog:
         phyPayload_encoded = encodePhyPayload(phy_payload)
         self.fCntUp += 1
         self.gateway.up_link_publish(phyPayload_encoded)
+        print(f"{BColors.HEADER.value}SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+
+    def configure(self, downlink_configuration_payload):
+        self.timetosend = downlink_configuration_payload.timetosend
+        self.timetoreceive = downlink_configuration_payload.timetoreceive
+        print(f"{BColors.HEADER.value}CONFIGURED WATCHDOG: {self.deviceName} - "
+              f"timetosend:{self.timetosend}ms timetoreceive:{self.timetoreceive}ms{BColors.ENDC.value}")
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
