@@ -2,7 +2,7 @@ import base64
 import random
 
 from payloads.mac_layer.phy_payload import Frame
-from payloads.watchdog_data import WatchdogData
+from payloads.mac_layer.watchdog_data import WatchdogData
 from utils.coder import encodeDevAddr, decode_frm_payload_to_mac_commands, encode_mac_commands_to_frm_payload
 from utils.payload_util import encrypt_frm_payload, getJsonFromObject
 

@@ -6,9 +6,10 @@ from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
+from payloads.info.tx_info import TxInfo
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import PhyPayload, MacPayload, FHDR, Frame
-from payloads.watchdog_data import WatchdogData
+from payloads.mac_layer.watchdog_data import WatchdogData
 from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload, \
     encodeDevAddr
 from utils.downlink_message_manager import manage_received_message
@@ -35,7 +36,7 @@ class Watchdog:
     def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
                  externalPowerSource=False, batteryLevelUnavailable=True, batteryLevel=255, tags=Tags(),
                  deviceProfileID="", deviceProfileName="", app_key="", net_skey="", app_skey="",
-                 joinEUI="0000000000000000"):
+                 joinEUI="0000000000000000", devAddr=None, txInfo=TxInfo()):
         self.applicationID = applicationID
         self.applicationName = applicationName
         self.deviceName = deviceName
@@ -56,13 +57,13 @@ class Watchdog:
         self.dev_nonce = None
         self.gateway = None
         self.active = False
-        self.dev_addr = None
+        self.dev_addr = devAddr
         self.fCntUp = 0  # da incrementare ad ogni invio
         self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
         self.timetosend = 10000  # timetosend ms
         self.timetoreceive = 40000  # timetoreceive in ms
-        self.txInfo = None
+        self.txInfo = txInfo
 
     def join(self):
         phy_payload = PhyPayload()
