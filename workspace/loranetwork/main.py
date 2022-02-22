@@ -11,7 +11,7 @@ from threads.thread_watchdog import ThreadWatchdog
 from utils.api_utils import getDeviceKeys, getDeviceList, getGatewayList
 
 # broker address
-broker = "172.22.83.253"
+broker = "172.24.167.134"
 port = 1883
 
 # configuration
@@ -123,7 +123,7 @@ def main():
         thread_watchdog.start()
         time.sleep(2)
 
-    time.sleep(1)
+    time.sleep(10)
 
     finish = 1
     while finish != "0":

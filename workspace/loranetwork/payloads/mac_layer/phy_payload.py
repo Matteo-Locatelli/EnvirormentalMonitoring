@@ -36,7 +36,7 @@ class Frame:
 
 class FCTRL:
     def __init__(self, data=bytearray()):
-        if (len(data) > 0):
+        if len(data) > 0:
             self.adr = data[0] & 0x80 != 0
             self.adrAckReq = data[0] & 0x40 != 0
             self.ack = data[0] & 0x20 != 0

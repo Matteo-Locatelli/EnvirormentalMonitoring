@@ -8,6 +8,7 @@ from typing import TypeVar
 
 from paho.mqtt.client import Client
 
+from enums.bcolors import BColors
 from enums.connection_state_enum import ConnectionStateEnum
 from enums.crc_status_enum import CRCStatusEnum
 from enums.tx_ack_status_enum import TxAckStatusEnum
@@ -86,18 +87,18 @@ class EdgeNode:
             self.client.on_subscribe = self.on_subscribe
             self.client.on_message = self.on_message
 
-            print("Client connect: ", self.client.connect(self.broker, self.port, 60))
+            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} "
+                  f"connect: {self.client.connect(self.broker, self.port, 60)} {BColors.ENDC.value}")
             time.sleep(1)
             self.client.loop_start()
 
             while not self.client.is_connected():
-                print("Wait for connection")
                 time.sleep(1)
 
-            print("Client connected!")
+            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} connected!{BColors.ENDC.value}")
         except BaseException as err:
-            print("ERROR: Could not connect to MQTT.")
-            print(f"Unexpected {err=}, {type(err)=}")
+            print(f"{BColors.WARNING.value}ERROR: Edgenode {self.id_gateway} Could not connect to MQTT.{BColors.ENDC.value}")
+            print(f"{BColors.FAIL.value}Unexpected {err=}, {type(err)=}{BColors.ENDC.value}")
             self.close_connection()
 
     def conn_publish(self, state=ConnectionStateEnum.OFFLINE.name):
@@ -151,7 +152,7 @@ class EdgeNode:
 
     def publish(self, topic, payload: T):
         if not self.client.is_connected():
-            return print("Client not connected")
+            return print(f"{BColors.WARNING.value}Edgenode {self.id_gateway} not connected{BColors.ENDC.value}")
         # json conversion
         json_payload = getJsonFromObject(payload)
         message = json.dumps(json_payload)
@@ -159,16 +160,16 @@ class EdgeNode:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            return print(f"Send message to topic `{topic}`")
+            return print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} send message to topic {topic}{BColors.ENDC.value}")
 
-        return print(f"Failed to send message to topic {topic}")
+        return print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed to send message to topic {topic}{BColors.ENDC.value}")
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
         self.client.subscribe(down_topic_to_sub)
 
     def close_connection(self):
-        self.conn_topic(ConnectionStateEnum.OFFLINE.name)
+        self.conn_publish(ConnectionStateEnum.OFFLINE.name)
         self.client.loop_stop()
         self.client.disconnect()
 
@@ -176,24 +177,24 @@ class EdgeNode:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.connected_flag = True
-            print("Connected OK Returned code=", rc)
+            print(f"{BColors.OKBLUE.value}Connected OK Returned code={rc}{BColors.ENDC.value}")
         else:
-            print("Bad connection Returned code=", rc)
+            print(F"{BColors.FAIL.value}Bad connection Returned code={rc}{BColors.ENDC.value}")
 
     def on_connect_fail(self):
-        print(f"Edgenode `{self.id_gateway}` connection failed")
+        print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed connection{BColors.ENDC.value}")
 
     def on_publish(self, client, userdata, mid):
         self.txPacketsReceived += 1
 
     def on_disconnect(self, client, userdata, rc):
-        print(f"Edgenode `{self.id_gateway}` disconnected with code=`{rc}`")
+        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} disconnected with code={rc}{BColors.ENDC.value}")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print(f"Edgenode `{self.id_gateway}` Subscribed to topic `{mid}`")
+        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} Subscribed to topic {mid}{BColors.ENDC.value}")
 
     def on_message(self, client, userdata, msg):
-        print(f"Edgenode `{self.id_gateway}` received message from topic: `{msg.topic}`")
+        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} received message from topic: {msg.topic}{BColors.ENDC.value}")
         message_decoded = json.loads(msg.payload.decode())
         phyPayload = message_decoded['phyPayload']
         result = False

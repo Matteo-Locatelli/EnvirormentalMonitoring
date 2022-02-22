@@ -1,6 +1,8 @@
 import time
 from threading import Thread
 
+from enums.bcolors import BColors
+
 
 class ThreadEdgenode(Thread):
     def __init__(self, gateway):
@@ -20,3 +22,4 @@ class ThreadEdgenode(Thread):
     def stop(self):
         self.gateway.close_connection()
         self._running = False
+        print(f"{BColors.OKCYAN.value}{BColors.UNDERLINE.value}THREAD EDGENODE {self.gateway.id_gateway} STOPPED{BColors.ENDC.value}")
