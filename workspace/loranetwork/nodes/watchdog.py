@@ -29,9 +29,6 @@ class Tags:
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
-
-# def getRandomData():
-
 class Watchdog:
     def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
                  externalPowerSource=False, batteryLevelUnavailable=True, batteryLevel=255, tags=Tags(),

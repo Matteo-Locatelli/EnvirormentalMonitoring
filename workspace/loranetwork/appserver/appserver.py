@@ -23,8 +23,7 @@ class AppServer:
     join_topic = "application/%s/device/%s/event/join"
     down_topic = "application/%s/device/%s/command/down"
 
-    def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost",
-                 network_server_id=None):
+    def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost"):
         self.broker = broker
         self.port = port
         self.ip = ip
@@ -35,7 +34,7 @@ class AppServer:
         self.id_application = id_application
         self.application_name = application_name
         self.can_sand_data = False
-        self.watchdogs = dict()
+        self.watchdogs = {}
 
     def start_connection(self):
         try:
