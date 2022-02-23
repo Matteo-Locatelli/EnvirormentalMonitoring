@@ -1,7 +1,7 @@
-from utils.api_utils import getDeviceList, getDeviceKeys, getGatewayList
+from utils.api_utils import getDeviceList, getDeviceKey, getGatewayList
 
 devEUI = "0ac14aad3e6391a1"
-resp = getDeviceKeys(devEUI)
+resp = getDeviceKey(devEUI)
 print(resp)
 
 applicationID = 1

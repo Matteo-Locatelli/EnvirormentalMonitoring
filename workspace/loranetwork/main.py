@@ -3,12 +3,14 @@ import math
 import threading
 import time
 
+from appserver.appserver import AppServer
 from enums.connection_state_enum import ConnectionStateEnum
 from nodes.edgenode import EdgeNode
 from nodes.watchdog import Watchdog
+from threads.thread_appserver import ThreadAppServer
 from threads.thread_edgenode import ThreadEdgenode
 from threads.thread_watchdog import ThreadWatchdog
-from utils.api_utils import getDeviceKeys, getDeviceList, getGatewayList
+from utils.api_utils import getDeviceKey, getDeviceList, getGatewayList
 
 # broker address
 broker = "172.24.167.134"
@@ -16,6 +18,7 @@ port = 1883
 
 # configuration
 applicationID = 1
+app_server_enabled = False
 
 
 def getDevices():
@@ -46,7 +49,7 @@ def getGateways():
 
 def activate_watchdogs(watchdog_list):
     for watchdog in watchdog_list:
-        resp = getDeviceKeys(watchdog.devEUI)
+        resp = getDeviceKey(watchdog.devEUI)
         watchdog.app_key = resp.device_keys.nwk_key
         watchdog.join()
 
@@ -94,7 +97,10 @@ def main():
     devices = getDevices()
     gateways = getGateways()
 
-    # list creation
+    # App Server
+    app_server = AppServer(broker=broker, port=port, id_application=applicationID, ip="localhost")
+
+    # Node list creation
     gateway_list = []
     for gw in gateways:
         gateway = EdgeNode(broker=broker, port=port, id_gateway=gw.id, name=gw.name,
@@ -111,10 +117,11 @@ def main():
     for device in devices:
         watchdog_list.append(Watchdog(applicationID=device.application_id, deviceName=device.name,
                                       deviceProfileID=device.device_profile_id, devEUI=device.dev_eui,
-                                      batteryLevelUnavailable=device.device_status_battery_level_unavailable,
-                                      batteryLevel=device.device_status_battery, margin=device.device_status_margin))
+                                      batteryLevelUnavailable=False,
+                                      batteryLevel=244, margin=device.device_status_margin))
 
     thread_watchdog_list, thread_gateway_list = assign_watchdogs_to_gateways(watchdog_list, gateway_list)
+    thread_app_server = ThreadAppServer(app_server)
 
     # starting threads
     for thread_gateway in thread_gateway_list:
@@ -123,15 +130,20 @@ def main():
         thread_watchdog.start()
         time.sleep(2)
 
-    time.sleep(10)
+    if app_server_enabled:
+        thread_app_server.init_app_server(devices)
+        thread_app_server.start()
 
     finish = 1
     while finish != "0":
         finish = input("0 per terminare")
-        time.sleep(1)
+        time.sleep(5)
 
     terminate_gateway_threads(thread_gateway_list)
     terminate_watchdog_threads(thread_watchdog_list)
+
+    if app_server_enabled:
+        thread_app_server.stop()
 
 
 if __name__ == "__main__":

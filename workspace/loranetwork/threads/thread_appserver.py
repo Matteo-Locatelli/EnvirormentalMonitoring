@@ -1,6 +1,8 @@
 import time
 from threading import Thread
 
+from enums.bcolors import BColors
+
 
 class ThreadAppServer(Thread):
     def __init__(self, app_server):
@@ -12,7 +14,7 @@ class ThreadAppServer(Thread):
         while self._running:
             time.sleep(10)
 
-    def start(self, devices):
+    def init_app_server(self, devices):
         self.app_server.start_connection()
         for device in devices:
             self.app_server.subscribe(device.dev_eui)
@@ -20,4 +22,4 @@ class ThreadAppServer(Thread):
     def stop(self):
         self._running = False
         self.app_server.close_connection()
-        print("thread_appserver stopped")
+        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD APPSERVER STOPPED{BColors.ENDC.value}")

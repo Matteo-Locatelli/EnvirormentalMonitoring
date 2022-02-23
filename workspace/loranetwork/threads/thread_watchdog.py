@@ -2,11 +2,11 @@ import time
 from threading import Thread
 
 from enums.bcolors import BColors
-from utils.api_utils import getDeviceKeys
+from utils.api_utils import getDeviceKey
 
 
 def getDecreaseBatteryLevel(timetosend, spreadingFactor, power):
-    return 1
+    return 1 + round(20000/timetosend)
 
 
 class ThreadWatchdog(Thread):
@@ -19,16 +19,23 @@ class ThreadWatchdog(Thread):
         self.previousMillisS = 0
         self.previousMillisR = 0
         self.previousMillisBatteryUpdate = 0
-        self.timetoupdate = 1000
+        self.timetoupdate = 2000
+        self.start_time = time.time()
+        self.finish_time = time.time()
 
     def run(self):
-        resp = getDeviceKeys(self.watchdog.devEUI)
+        resp = getDeviceKey(self.watchdog.devEUI)
         self.watchdog.app_key = resp.device_keys.nwk_key
         self.threadLock.acquire()
         self.watchdog.join()
         self.threadLock.release()
         while self._running:
             currentMillis = round(time.time() * 1000)
+
+            if self.watchdog.batteryLevel <= 0:
+                self.finish_time = time.time()
+                self.stop()
+                break
 
             if (currentMillis - self.previousMillisBatteryUpdate) > self.timetoupdate:
                 spreadingFactor = None
@@ -51,4 +58,6 @@ class ThreadWatchdog(Thread):
 
     def stop(self):
         self._running = False
-        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} STOPPED{BColors.ENDC.value}")
+        life_time = round((self.finish_time - self.start_time)/60, 2)
+        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} "
+              f"STOPPED - LIFE TIME {life_time} minutes {BColors.ENDC.value}")

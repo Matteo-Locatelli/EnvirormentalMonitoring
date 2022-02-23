@@ -2,11 +2,17 @@ from datetime import datetime
 import time
 import json
 import base64
+from typing import TypeVar
+
 from paho.mqtt.client import Client
 
 from enums.bcolors import BColors
+from payloads.appserver.down_command_payload import DownCommandPayload
 from utils.api_utils import enqueue_device_downlink
 from utils.app_server_utils import getWatchdogAppServer, getWatchdogConfiguration
+from utils.payload_util import getJsonFromObject
+
+T = TypeVar('T')
 
 
 class AppServer:
@@ -15,6 +21,7 @@ class AppServer:
     up_topic = "application/%s/device/%s/event/up"
     status_topic = "application/%s/device/%s/event/status"
     join_topic = "application/%s/device/%s/event/join"
+    down_topic = "application/%s/device/%s/command/down"
 
     def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost",
                  network_server_id=None):
@@ -40,7 +47,6 @@ class AppServer:
             self.client.on_connect = self.on_connect
             self.client.on_connect_fail = self.on_connect_fail
             self.client.on_disconnect = self.on_disconnect
-            self.client.on_subscribe = self.on_subscribe
             self.client.on_message = self.on_message
 
             print(f"{BColors.OKGREEN.value}AppServer "
@@ -49,14 +55,35 @@ class AppServer:
             self.client.loop_start()
 
             while not self.client.is_connected():
-                print(f"{BColors.OKGREEN.value}Wait for connection{BColors.ENDC.value}")
                 time.sleep(1)
 
-            print("Client connected!")
+            print(f"{BColors.OKGREEN.value}AppServer connected!{BColors.ENDC.value}")
         except BaseException as err:
             print(f"{BColors.WARNING.value}ERROR: AppServer Could not connect to MQTT.{BColors.ENDC.value}")
             print(f"{BColors.FAIL.value}Unexpected {err=}, {type(err)=}{BColors.ENDC.value}")
             self.close_connection()
+
+    def down_link_publish(self, dev_eui, port, confirmed, data):
+        down_topic = AppServer.down_topic % (self.id_application, dev_eui)
+        down_command_payload = DownCommandPayload()
+        down_command_payload.fPort = port
+        down_command_payload.confirmed = confirmed
+        down_command_payload.data = data
+        self.publish(down_topic, down_command_payload)
+
+    def publish(self, topic, payload: T):
+        if not self.client.is_connected():
+            return print(f"{BColors.WARNING.value}Appserver not connected{BColors.ENDC.value}")
+        # json conversion
+        json_payload = getJsonFromObject(payload)
+        message = json.dumps(json_payload)
+
+        result = self.client.publish(topic, message)
+        status = result[0]
+        if status == 0:
+            return print(f"{BColors.OKGREEN.value}AppServer send message to topic {topic}{BColors.ENDC.value}")
+
+        return print(f"{BColors.FAIL.value}AppServer failed to send message to topic {topic}{BColors.ENDC.value}")
 
     def subscribe(self, devEUI):
         join_topic_to_sub = AppServer.join_topic % (self.id_application, devEUI)
@@ -85,9 +112,6 @@ class AppServer:
     def on_disconnect(self, client, userdata, rc):
         print(f"{BColors.OKGREEN.value}AppServer disconnected with code={rc}{BColors.ENDC.value}")
 
-    def on_subscribe(self, client, userdata, mid, granted_qos):
-        print(f"{BColors.OKGREEN.value}AppServer subscribed to topic {mid}{BColors.ENDC.value}")
-
     def on_message(self, client, userdata, msg):
         print(f"{BColors.OKGREEN.value}AppServer received message from topic: {msg.topic}{BColors.ENDC.value}")
         topic_splitted = msg.topic.split("/")
@@ -99,18 +123,22 @@ class AppServer:
         elif topic_type == "eventup":
             devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
             self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-
+            self.watchdogs[devEUI_decoded].active = True
         elif topic_type == "eventstatus":
             devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
             self.watchdogs[devEUI_decoded].watchdog.batteryLevel = payload_decoded['batteryLevel']
             self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
             self.watchdogs[devEUI_decoded].watchdog.margin = payload_decoded['margin']
             self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-            watchdog_configuration = getWatchdogConfiguration()
-            string_to_send = json.dumps(watchdog_configuration.toJson())
-            string_to_send_encoded = base64.b64encode(string_to_send.encode()).decode()
-            enqueue_device_downlink(devEUI_decoded, 1, False, string_to_send_encoded)
-            
+            if self.watchdogs[devEUI_decoded].active and not self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable:
+                watchdog_configuration = getWatchdogConfiguration(self.watchdogs[devEUI_decoded])
+                string_to_send = watchdog_configuration.toJson()
+                string_to_send_encoded = base64.b64encode(string_to_send.encode()).decode()
+                self.down_link_publish(devEUI_decoded, 1, False, string_to_send_encoded)
+                # enqueue_device_downlink(devEUI_decoded, 1, False, string_to_send_encoded)
+                device_name = self.watchdogs[devEUI_decoded].watchdog.deviceName
+                print(
+                    f"{BColors.OKGREEN.value}APPSERVER ENQUEQUE WATCHDOG {device_name} CONFIGURATION{BColors.ENDC.value}")
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

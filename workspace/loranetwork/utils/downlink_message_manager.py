@@ -62,6 +62,8 @@ def manage_mac_commands(watchdog, phyPayload):
 def manage_configuration_message(watchdog, phyPayload):
     if phyPayload.macPayload.frmPayload is None or len(phyPayload.macPayload.frmPayload) <= 0:
         return
+    if phyPayload.macPayload.fPort is not None and phyPayload.macPayload.fPort == 0:
+        return
     encrypted_frm_payload = bytearray(base64.b64decode(phyPayload.macPayload.frmPayload[0].bytes))
     dev_addr_byte = encodeDevAddr(int(phyPayload.macPayload.fhdr.devAddr, 16).to_bytes(4, 'little'))
     decrypted_frm_payload = encrypt_frm_payload(watchdog.app_skey, watchdog.net_skey,
@@ -71,6 +73,7 @@ def manage_configuration_message(watchdog, phyPayload):
                                                 phyPayload.macPayload.fhdr.fCnt,
                                                 encrypted_frm_payload)
     downlink_configuration_payload = DownlinkConfigurationPayload()
+    # json_frm_payload = json.loads(base64.b64decode(decrypted_frm_payload.decode()).decode())
     json_frm_payload = json.loads(decrypted_frm_payload.decode())
     downlink_configuration_payload.timetosend = json_frm_payload['timetosend']
     downlink_configuration_payload.timetoreceive = json_frm_payload['timetoreceive']

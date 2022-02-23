@@ -61,8 +61,8 @@ class Watchdog:
         self.fCntUp = 0  # da incrementare ad ogni invio
         self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
-        self.timetosend = 20000  # timetosend ms
-        self.timetoreceive = 40000  # timetoreceive in ms
+        self.timetosend = 4000  # timetosend ms
+        self.timetoreceive = 4000  # timetoreceive in ms
         self.txInfo = txInfo
 
     def join(self):

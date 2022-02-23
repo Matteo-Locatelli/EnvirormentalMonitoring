@@ -1,5 +1,5 @@
 import time
-from nodes.appserver import AppServer
+from appserver.appserver import AppServer
 from threads.thread_appserver import ThreadAppServer
 from utils.api_utils import getDeviceList
 
