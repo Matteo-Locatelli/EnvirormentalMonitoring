@@ -9,13 +9,10 @@ api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiNTFmNWVhMm
 
 
 def getDeviceList(applicationID, limit, offset):
-    # Connect without using TLS.
     channel = grpc.insecure_channel(server)
 
-    # Device-queue API client.
     client = api.DeviceServiceStub(channel)
 
-    # Define the API key meta-data.
     auth_token = [("authorization", "Bearer %s" % api_token)]
 
     # Construct request.
@@ -28,13 +25,10 @@ def getDeviceList(applicationID, limit, offset):
 
 
 def getGatewayList(limit, offset):
-    # Connect without using TLS.
     channel = grpc.insecure_channel(server)
 
-    # Device-queue API client.
     client = api.GatewayServiceStub(channel)
 
-    # Define the API key meta-data.
     auth_token = [("authorization", "Bearer %s" % api_token)]
 
     # Construct request.
@@ -46,13 +40,10 @@ def getGatewayList(limit, offset):
 
 
 def getDeviceKeys(dev_eui):
-    # Connect without using TLS.
     channel = grpc.insecure_channel(server)
 
-    # Device-queue API client.
     client = api.DeviceServiceStub(channel)
 
-    # Define the API key meta-data.
     auth_token = [("authorization", "Bearer %s" % api_token)]
 
     # Construct request.
@@ -60,3 +51,24 @@ def getDeviceKeys(dev_eui):
     req.dev_eui = dev_eui
     resp = client.GetKeys(req, metadata=auth_token)
     return resp
+
+
+def enqueue_device_downlink(dev_eui, fPort, confirmed, data):
+    channel = grpc.insecure_channel(server)
+
+    # Device-queue API client.
+    client = api.DeviceQueueServiceStub(channel)
+
+    auth_token = [("authorization", "Bearer %s" % api_token)]
+
+    # Construct request.
+    req = api.EnqueueDeviceQueueItemRequest()
+    req.device_queue_item.confirmed = confirmed
+    req.device_queue_item.data = data
+    req.device_queue_item.dev_eui = dev_eui.hex()
+    req.device_queue_item.f_port = fPort
+
+    resp = client.Enqueue(req, metadata=auth_token)
+
+    # Print the downlink frame-counter value.
+    print(resp.f_cnt)

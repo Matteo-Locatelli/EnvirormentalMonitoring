@@ -5,7 +5,8 @@ import base64
 from paho.mqtt.client import Client
 
 from enums.bcolors import BColors
-from utils.app_server_utils import getWatchdogAppServer
+from utils.api_utils import enqueue_device_downlink
+from utils.app_server_utils import getWatchdogAppServer, getWatchdogConfiguration
 
 
 class AppServer:
@@ -105,6 +106,10 @@ class AppServer:
             self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
             self.watchdogs[devEUI_decoded].watchdog.margin = payload_decoded['margin']
             self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
+            watchdog_configuration = getWatchdogConfiguration()
+            string_to_send = json.dumps(watchdog_configuration.toJson())
+            string_to_send_encoded = base64.b64encode(string_to_send.encode()).decode()
+            enqueue_device_downlink(devEUI_decoded, 1, False, string_to_send_encoded)
             
 
     def toJson(self):
