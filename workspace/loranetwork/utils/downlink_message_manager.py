@@ -6,71 +6,71 @@ from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.message_type_enum import MessageTypeEnum
 from payloads.mac_layer.downlink_configuration_payload import DownlinkConfigurationPayload
-from utils.coder import decodePhyPayload, decode_frm_payload_to_mac_commands, encodeDevAddr, \
+from utils.coder import decode_phy_payload, decode_frm_payload_to_mac_commands, encode_dev_addr, \
     decode_fopts_payload_to_mac_commands
-from utils.payload_util import compute_join_accept_mic, compute_data_mic, getJsonFromObject, encrypt_frm_payload
+from utils.payload_util import compute_join_accept_mic, compute_data_mic, encrypt_frm_payload
 
 
-def manage_received_message(watchdog, phyPayloadEncoded):
-    phyPayload = decodePhyPayload(phyPayloadEncoded)
-    print(f"{BColors.HEADER.value}WATCHDOG {watchdog.deviceName} RECEIVED {phyPayload.mhdr.mType}{BColors.ENDC.value}")
-    if phyPayload.macPayload.fhdr.devAddr != watchdog.dev_addr:
+def manage_received_message(watchdog, phy_payload_encoded):
+    phy_payload = decode_phy_payload(phy_payload_encoded)
+    print(f"{BColors.HEADER.value}WATCHDOG {watchdog.deviceName} RECEIVED {phy_payload.mhdr.mType}{BColors.ENDC.value}")
+    if phy_payload.macPayload.fhdr.devAddr != watchdog.dev_addr:
         return False
 
-    if phyPayload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
-        mic = compute_join_accept_mic(base64.b64decode(phyPayloadEncoded), watchdog.app_key)
-    elif phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
-            phyPayload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.getName():
-        mic = compute_data_mic(base64.b64decode(phyPayloadEncoded), LorawanVersionEnum.LoRaWANR1_0.value,
+    if phy_payload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.get_name():
+        mic = compute_join_accept_mic(base64.b64decode(phy_payload_encoded), watchdog.app_key)
+    elif phy_payload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.get_name() or \
+            phy_payload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.get_name():
+        mic = compute_data_mic(base64.b64decode(phy_payload_encoded), LorawanVersionEnum.LoRaWANR1_0.value,
                                watchdog.fCntDown, 0, 0, watchdog.net_skey, False)
     else:
         print(f"{BColors.WARNING.value}Unknown downlink message{BColors.ENDC.value}")
         return False
 
-    if mic != phyPayload.mic:
+    if mic != phy_payload.mic:
         print(f"{BColors.WARNING.value}Invalid MIC {BColors.ENDC.value}")
         return False
 
-    if phyPayload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
-        watchdog.activate(phyPayload)
+    if phy_payload.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.get_name():
+        watchdog.activate(phy_payload)
         return True
-    if phyPayload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.getName() or \
-            phyPayload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.getName():
-        manage_mac_commands(watchdog, phyPayload)
-        if phyPayload.macPayload.fPort is not None and phyPayload.macPayload.fPort > 0:
-            manage_configuration_message(watchdog, phyPayload)
+    if phy_payload.mhdr.mType == MessageTypeEnum.UNCONFIRMED_DATA_DOWN.get_name() or \
+            phy_payload.mhdr.mType == MessageTypeEnum.CONFIRMED_DATA_DOWN.get_name():
+        manage_mac_commands(watchdog, phy_payload)
+        if phy_payload.macPayload.fPort is not None and phy_payload.macPayload.fPort > 0:
+            manage_configuration_message(watchdog, phy_payload)
         return True
     return False
 
 
-def manage_mac_commands(watchdog, phyPayload):
-    message_type = MessageTypeEnum.findByName(phyPayload.mhdr.mType)
+def manage_mac_commands(watchdog, phy_payload):
+    message_type = MessageTypeEnum.find_by_name(phy_payload.mhdr.mType)
     mac_command_list = []
-    mac_command_list.extend(decode_fopts_payload_to_mac_commands(message_type.isUplink(),
-                                                                 phyPayload.macPayload.fhdr.fOpts))
+    mac_command_list.extend(decode_fopts_payload_to_mac_commands(message_type.is_uplink(),
+                                                                 phy_payload.macPayload.fhdr.fOpts))
     mac_command_list.extend(decode_frm_payload_to_mac_commands(watchdog.app_skey, watchdog.net_skey,
-                                                               phyPayload.macPayload.fPort,
-                                                               message_type.isUplink(),
-                                                               phyPayload.macPayload.fhdr.devAddr,
-                                                               phyPayload.macPayload.fhdr.fCnt,
-                                                               phyPayload.macPayload.frmPayload))
+                                                               phy_payload.macPayload.fPort,
+                                                               message_type.is_uplink(),
+                                                               phy_payload.macPayload.fhdr.devAddr,
+                                                               phy_payload.macPayload.fhdr.fCnt,
+                                                               phy_payload.macPayload.frmPayload))
     for mac_command in mac_command_list:
-        if mac_command.cid == MacCommandEnum.DEVICE_STATUS_REQ.getName():
+        if mac_command.cid == MacCommandEnum.DEVICE_STATUS_REQ.get_name():
             watchdog.send_device_status()
 
 
-def manage_configuration_message(watchdog, phyPayload):
-    if phyPayload.macPayload.frmPayload is None or len(phyPayload.macPayload.frmPayload) <= 0:
+def manage_configuration_message(watchdog, phy_payload):
+    if phy_payload.macPayload.frmPayload is None or len(phy_payload.macPayload.frmPayload) <= 0:
         return
-    if phyPayload.macPayload.fPort is not None and phyPayload.macPayload.fPort == 0:
+    if phy_payload.macPayload.fPort is not None and phy_payload.macPayload.fPort == 0:
         return
-    encrypted_frm_payload = bytearray(base64.b64decode(phyPayload.macPayload.frmPayload[0].bytes))
-    dev_addr_byte = encodeDevAddr(int(phyPayload.macPayload.fhdr.devAddr, 16).to_bytes(4, 'little'))
+    encrypted_frm_payload = bytearray(base64.b64decode(phy_payload.macPayload.frmPayload[0].bytes))
+    dev_addr_byte = encode_dev_addr(int(phy_payload.macPayload.fhdr.devAddr, 16).to_bytes(4, 'little'))
     decrypted_frm_payload = encrypt_frm_payload(watchdog.app_skey, watchdog.net_skey,
-                                                phyPayload.macPayload.fPort,
+                                                phy_payload.macPayload.fPort,
                                                 False,
                                                 dev_addr_byte,
-                                                phyPayload.macPayload.fhdr.fCnt,
+                                                phy_payload.macPayload.fhdr.fCnt,
                                                 encrypted_frm_payload)
     downlink_configuration_payload = DownlinkConfigurationPayload()
     # json_frm_payload = json.loads(base64.b64decode(decrypted_frm_payload.decode()).decode())

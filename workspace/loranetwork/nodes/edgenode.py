@@ -20,16 +20,16 @@ from payloads.edgenode.stats_payload import StatsPayload
 from payloads.edgenode.tx_ack_item_payload import TxAckItemPayload
 from payloads.edgenode.tx_ack_payload import TxAckPayload
 from payloads.edgenode.up_payload import UpPayload
-from utils.payload_util import getJsonFromObject
+from utils.payload_util import get_json_from_object
 
 T = TypeVar('T')
 
 """""
 def get_up_payload(message_type, major_type, phy_payload):
     p = PhyPayload()
-    p.mhdr.mType = message_type.getName()
-    p.mhdr.major = major_type.getName()
-    #p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
+    p.mhdr.mType = message_type.get_name()
+    p.mhdr.major = major_type.get_name()
+    #p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['dev_addr']
     p.macPayload.fhdr.fCtrl.ADR = False
     p.macPayload.fhdr.fCtrl.ADRACKReq = False
     p.macPayload.fhdr.fCtrl.ACK = False
@@ -128,16 +128,16 @@ class EdgeNode:
 
         self.publish(stats_topic, stats_payload)
 
-    def up_link_publish(self, phy_payload, txInfo=TxInfo()):
+    def up_link_publish(self, phy_payload, tx_info=TxInfo()):
         up_topic = EdgeNode.up_topic % self.id_gateway
 
         # payload setting
         randstr = str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         uplink_id = base64.b64encode(randstr.encode()).decode()
-        rxInfo = RxInfo(gatewayID=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                        crcStatus=CRCStatusEnum.CRC_OK.name, uplinkID=uplink_id)
+        rx_info = RxInfo(gateway_id=self.encoded_id_gateway, time=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         crc_status=CRCStatusEnum.CRC_OK.name, uplink_id=uplink_id)
 
-        up_link_payload = UpPayload(phyPayload=phy_payload, txInfo=txInfo, rxInfo=rxInfo)
+        up_link_payload = UpPayload(phy_payload=phy_payload, tx_info=tx_info, rx_info=rx_info)
 
         self.publish(up_topic, up_link_payload)
 
@@ -154,7 +154,7 @@ class EdgeNode:
         if not self.client.is_connected():
             return print(f"{BColors.WARNING.value}Edgenode {self.id_gateway} not connected{BColors.ENDC.value}")
         # json conversion
-        json_payload = getJsonFromObject(payload)
+        json_payload = get_json_from_object(payload)
         message = json.dumps(json_payload)
 
         result = self.client.publish(topic, message)
@@ -196,12 +196,12 @@ class EdgeNode:
     def on_message(self, client, userdata, msg):
         print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} received message from topic: {msg.topic}{BColors.ENDC.value}")
         message_decoded = json.loads(msg.payload.decode())
-        phyPayload = message_decoded['phyPayload']
+        phy_payload = message_decoded['phyPayload']
         result = False
         for watchdog in self.watchdogs:
-            txInfoStr = json.dumps(message_decoded['txInfo'])
-            txInfo = json.loads(txInfoStr, object_hook=lambda d: SimpleNamespace(**d))
-            result = result or watchdog.receive_message(phyPayload, txInfo)
+            tx_info_str = json.dumps(message_decoded['txInfo'])
+            tx_info = json.loads(tx_info_str, object_hook=lambda d: SimpleNamespace(**d))
+            result = result or watchdog.receive_message(phy_payload, tx_info)
 
         if result:
             self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
@@ -209,5 +209,5 @@ class EdgeNode:
             self.rxPacketsReceivedOK += 1
         self.rxPacketsReceived += 1
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

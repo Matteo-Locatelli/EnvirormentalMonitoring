@@ -11,10 +11,10 @@ from payloads.info.tx_info import TxInfo
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
 from payloads.mac_layer.phy_payload import PhyPayload, MacPayload, FHDR, Frame
 from payloads.mac_layer.watchdog_data import WatchdogData
-from utils.coder import encodePhyPayload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload, \
-    encodeDevAddr
+from utils.coder import encode_phy_payload, decode_join_accept_mac_payload, encode_mac_commands_to_frm_payload, \
+    encode_dev_addr
 from utils.downlink_message_manager import manage_received_message
-from utils.payload_util import compute_join_request_mic, getJsonFromObject, compute_data_mic, encrypt_frm_payload
+from utils.payload_util import compute_join_request_mic, compute_data_mic, encrypt_frm_payload
 
 
 class Tags:
@@ -26,55 +26,56 @@ class Tags:
             return NotImplemented
         return self.ok.__eq__(other.ok)
 
-    def toJSON(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
 
+
 class Watchdog:
-    def __init__(self, applicationID="", applicationName="", deviceName="", devEUI="", margin=None,
-                 externalPowerSource=False, batteryLevelUnavailable=True, batteryLevel=255, tags=Tags(),
-                 deviceProfileID="", deviceProfileName="", app_key="", net_skey="", app_skey="",
-                 joinEUI="0000000000000000", devAddr=None, txInfo=TxInfo()):
-        self.applicationID = applicationID
-        self.applicationName = applicationName
-        self.deviceName = deviceName
-        self.devEUI = devEUI
+    def __init__(self, application_id="", application_name="", device_name="", dev_eui="", margin=None,
+                 external_power_source=False, battery_level_unavailable=True, battery_level=255, tags=Tags(),
+                 device_profile_id="", device_profile_name="", app_key="", net_skey="", app_skey="",
+                 join_eui="0000000000000000", dev_addr=None, tx_info=TxInfo()):
+        self.applicationID = application_id
+        self.applicationName = application_name
+        self.deviceName = device_name
+        self.devEUI = dev_eui
         self.margin = margin
-        self.externalPowerSource = externalPowerSource
-        self.batteryLevelUnavailable = batteryLevelUnavailable
-        self.batteryLevel = batteryLevel
+        self.externalPowerSource = external_power_source
+        self.batteryLevelUnavailable = battery_level_unavailable
+        self.batteryLevel = battery_level
         self.tags = tags
-        self.deviceProfileID = deviceProfileID
-        self.deviceProfileName = deviceProfileName
+        self.deviceProfileID = device_profile_id
+        self.deviceProfileName = device_profile_name
         self.app_key = app_key
         self.net_skey = net_skey
         self.app_skey = app_skey
-        self.joinEUI = joinEUI
+        self.joinEUI = join_eui
         self.app_nonce = None
         self.net_ID = None
         self.dev_nonce = None
         self.gateway = None
         self.active = False
-        self.dev_addr = devAddr
+        self.dev_addr = dev_addr
         self.fCntUp = 0  # da incrementare ad ogni invio
         self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
         self.timetosend = 4000  # timetosend ms
         self.timetoreceive = 4000  # timetoreceive in ms
-        self.txInfo = txInfo
+        self.txInfo = tx_info
 
     def join(self):
         phy_payload = PhyPayload()
-        phy_payload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.getName()
-        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        phy_payload.mhdr.mType = MessageTypeEnum.JOIN_REQUEST.get_name()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.get_name()
         phy_payload.macPayload.devEUI = self.devEUI
         phy_payload.macPayload.joinEUI = self.joinEUI
         self.dev_nonce = random.randint(10000, 30000)
         phy_payload.macPayload.devNonce = self.dev_nonce
         phy_payload.mic = "0"
-        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
+        phy_payload_encoded = base64.b64decode(encode_phy_payload(phy_payload))
         phy_payload.mic = compute_join_request_mic(phy_payload_encoded, self.app_key)
-        phyPayload_encoded = encodePhyPayload(phy_payload)
-        self.gateway.up_link_publish(phyPayload_encoded)
+        phy_payload_encoded = encode_phy_payload(phy_payload)
+        self.gateway.up_link_publish(phy_payload_encoded)
         self.fCntUp += 1
 
     def send_data(self):
@@ -86,16 +87,16 @@ class Watchdog:
         w_data.temperature = round(random.gauss(5, 6), 2)
         frame_payload = bytearray(base64.b64decode(w_data.encode_data()))
 
-        dev_addr_byte = encodeDevAddr(int(self.dev_addr, 16).to_bytes(4, 'little'))
+        dev_addr_byte = encode_dev_addr(int(self.dev_addr, 16).to_bytes(4, 'little'))
         ecrypted_frame_payload = encrypt_frm_payload(self.app_skey, self.net_skey, 1, True, dev_addr_byte, self.fCntUp,
                                                      frame_payload)
         ecrypted_frame_payload_encoded = base64.b64encode(ecrypted_frame_payload).decode()
         phy_payload = PhyPayload()
         # set MHDR
-        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.getName()
-        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.get_name()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.get_name()
         # set MacPayload
-        macPaylaod = MacPayload()
+        mac_paylaod = MacPayload()
         # set FHDR
         fhdr = FHDR()
         fhdr.devAddr = self.dev_addr
@@ -103,27 +104,26 @@ class Watchdog:
 
         fhdr.fCtrl.adr = True
 
-        macPaylaod.fhdr = fhdr
-        macPaylaod.fPort = 1
-        macPaylaod.frmPayload.append(Frame(ecrypted_frame_payload_encoded))
+        mac_paylaod.fhdr = fhdr
+        mac_paylaod.fPort = 1
+        mac_paylaod.frmPayload.append(Frame(ecrypted_frame_payload_encoded))
 
-        phy_payload.macPayload = macPaylaod
+        phy_payload.macPayload = mac_paylaod
         phy_payload.mic = "0"
-        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
+        phy_payload_encoded = base64.b64decode(encode_phy_payload(phy_payload))
         phy_payload.mic = compute_data_mic(phy_payload_encoded, LorawanVersionEnum.LoRaWANR1_0.value, self.fCntUp, 0, 0,
                                            self.net_skey, True)
-        phyPayload_encoded = encodePhyPayload(phy_payload)
+        phy_payload_encoded = encode_phy_payload(phy_payload)
         self.fCntUp += 1
         print(f"{BColors.HEADER.value}SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
         self.data.append(w_data)
-        self.gateway.up_link_publish(phyPayload_encoded)
+        self.gateway.up_link_publish(phy_payload_encoded)
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
             # don't attempt to compare against unrelated types
             return NotImplemented
-        return self.applicationID.__eq__(other.applicationID) and \
-               self.applicationName.__eq__(other.applicationName) and \
+        return self.applicationID.__eq__(other.applicationID) and self.applicationName.__eq__(other.applicationName) and \
                self.applicationName.__eq__(other.applicationName) and \
                self.deviceName.__eq__(other.deviceName) and self.devEUI.__eq__(other.devEUI) and \
                self.margin.__eq__(other.margin) and self.externalPowerSource.__eq__(other.externalPowerSource) and \
@@ -131,8 +131,8 @@ class Watchdog:
                self.batteryLevel.__eq__(other.batteryLevel) and self.tags.__eq__(other.tags) and \
                self.active.__eq__(other.active)
 
-    def activate(self, phyPayload):
-        join_accept_mac_payload = decode_join_accept_mac_payload(self.app_key, self.dev_nonce, phyPayload)
+    def activate(self, phy_payload):
+        join_accept_mac_payload = decode_join_accept_mac_payload(self.app_key, self.dev_nonce, phy_payload)
         self.net_skey = join_accept_mac_payload.nwk_SKey
         self.app_skey = join_accept_mac_payload.app_SKey
         self.app_nonce = join_accept_mac_payload.app_nonce
@@ -144,9 +144,9 @@ class Watchdog:
         self.active = True
         print(f"{BColors.HEADER.value}ACTIVATE WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
 
-    def receive_message(self, phyPayload, txInfo):
-        result = manage_received_message(self, phyPayload)
-        self.txInfo = txInfo
+    def receive_message(self, phy_payload, tx_info):
+        result = manage_received_message(self, phy_payload)
+        self.txInfo = tx_info
         self.fCntDown += 1
         return result
 
@@ -159,14 +159,14 @@ class Watchdog:
         mac_command_payload.margin = self.margin
         mac_command_payload.battery = self.batteryLevel
         mac_command.payload = mac_command_payload
-        mac_command.cid = MacCommandEnum.DEVICE_STATUS_ANS.getName()
+        mac_command.cid = MacCommandEnum.DEVICE_STATUS_ANS.get_name()
         frm_payload_encoded = encode_mac_commands_to_frm_payload(self.app_skey,
                                                                  self.net_skey, 0,
                                                                  True, self.dev_addr, self.fCntUp, [mac_command])
         # setting phy payload
         phy_payload = PhyPayload()
-        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.getName()
-        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.getName()
+        phy_payload.mhdr.mType = MessageTypeEnum.UNCONFIRMED_DATA_UP.get_name()
+        phy_payload.mhdr.major = MajorTypeEnum.LoRaWANR1.get_name()
         # setting mac payload
         mac_payload = MacPayload()
         mac_payload.fPort = 0
@@ -181,12 +181,12 @@ class Watchdog:
 
         phy_payload.macPayload = mac_payload
         phy_payload.mic = "0"
-        phy_payload_encoded = base64.b64decode(encodePhyPayload(phy_payload))
+        phy_payload_encoded = base64.b64decode(encode_phy_payload(phy_payload))
         phy_payload.mic = compute_data_mic(phy_payload_encoded, LorawanVersionEnum.LoRaWANR1_0.value, self.fCntUp, 0, 0,
                                            self.net_skey, True)
-        phyPayload_encoded = encodePhyPayload(phy_payload)
+        phy_payload_encoded = encode_phy_payload(phy_payload)
         self.fCntUp += 1
-        self.gateway.up_link_publish(phyPayload_encoded)
+        self.gateway.up_link_publish(phy_payload_encoded)
         print(f"{BColors.HEADER.value}SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
 
     def configure(self, downlink_configuration_payload):
@@ -195,5 +195,5 @@ class Watchdog:
         print(f"{BColors.HEADER.value}CONFIGURED WATCHDOG: {self.deviceName} - "
               f"timetosend:{self.timetosend}ms timetoreceive:{self.timetoreceive}ms{BColors.ENDC.value}")
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

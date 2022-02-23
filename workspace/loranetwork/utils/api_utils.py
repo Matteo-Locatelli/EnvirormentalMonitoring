@@ -8,7 +8,7 @@ server = "localhost:8080"
 api_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiNTFmNWVhMmItZGVkOC00ZjU2LTlkOGYtMTU0YTIwYjZiMDZmIiwiYXVkIjoiYXMiLCJpc3MiOiJhcyIsIm5iZiI6MTY0Mjg3MDU4Miwic3ViIjoiYXBpX2tleSJ9.cCLELlxRPbSk8YFJm4ndjxjssmAX4BKEizDKVp3TWpo"
 
 
-def getDeviceList(applicationID, limit, offset):
+def get_device_list(application_id, limit, offset):
     channel = grpc.insecure_channel(server)
 
     client = api.DeviceServiceStub(channel)
@@ -17,14 +17,14 @@ def getDeviceList(applicationID, limit, offset):
 
     # Construct request.
     req = api.ListDeviceRequest()
-    req.application_id = applicationID
+    req.application_id = application_id
     req.limit = limit
     req.offset = offset
     resp = client.List(req, metadata=auth_token)
     return resp
 
 
-def getGatewayList(limit, offset):
+def get_gateway_list(limit, offset):
     channel = grpc.insecure_channel(server)
 
     client = api.GatewayServiceStub(channel)
@@ -39,7 +39,7 @@ def getGatewayList(limit, offset):
     return resp
 
 
-def getDeviceKey(dev_eui):
+def get_device_key(dev_eui):
     channel = grpc.insecure_channel(server)
 
     client = api.DeviceServiceStub(channel)
@@ -53,7 +53,7 @@ def getDeviceKey(dev_eui):
     return resp
 
 
-def enqueue_device_downlink(dev_eui, fPort, confirmed, data):
+def enqueue_device_downlink(dev_eui, f_port, confirmed, data):
     channel = grpc.insecure_channel(server)
 
     # Device-queue API client.
@@ -67,7 +67,7 @@ def enqueue_device_downlink(dev_eui, fPort, confirmed, data):
     req.device_queue_item.confirmed = confirmed
     req.device_queue_item.data = bytes(data.encode())
     req.device_queue_item.dev_eui = dev_eui_hex
-    req.device_queue_item.f_port = fPort
+    req.device_queue_item.f_port = f_port
 
     resp = client.Enqueue(req, metadata=auth_token)
 

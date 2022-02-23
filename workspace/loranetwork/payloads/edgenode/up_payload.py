@@ -5,10 +5,10 @@ from payloads.info.tx_info import TxInfo
 
 
 class UpPayload:
-    def __init__(self, phyPayload="", txInfo=TxInfo(), rxInfo=RxInfo()):
-        self.phyPayload = phyPayload
-        self.txInfo = txInfo
-        self.rxInfo = rxInfo
+    def __init__(self, phy_payload="", tx_info=TxInfo(), rx_info=RxInfo()):
+        self.phyPayload = phy_payload
+        self.txInfo = tx_info
+        self.rxInfo = rx_info
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)

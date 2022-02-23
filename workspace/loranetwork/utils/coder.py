@@ -9,51 +9,51 @@ from enums.major_type_enum import MajorTypeEnum
 from enums.message_type_enum import MessageTypeEnum
 from payloads.mac_layer.join_accept_mac_payload import JoinAccpetMacPayload
 from payloads.mac_layer.mac_command_payload import MacCommandItem, MacCommandPayload
-from payloads.mac_layer.phy_payload import *
+from payloads.mac_layer.phy_payload import FCTRL, Frame, FHDR, PhyPayload, MacPayload, MHDR
 from utils.payload_util import encrypt_frm_payload, encrypt_mac_payload
 
 
-def MType(byte):
+def get_mtype(byte):
     return struct.unpack("B", byte)[0] >> 5
 
 
-def Major(byte):
+def get_major(byte):
     return struct.unpack("B", byte)[0] & 0x03
 
 
-def decodeNetID(data):
+def decode_net_id(data):
     return data[::-1]
 
 
-def decodeDevAddr(data):
+def decode_dev_addr(data):
     return data[::-1]
 
 
-def decodeMic(data):
+def decode_mic(data):
     return data[::-1]
 
 
-def decodeFHDR(data):
+def decode_fhdr(data):
     fhdr = FHDR()
-    fhdr.devAddr = decodeDevAddr(data[0:4]).hex()
+    fhdr.devAddr = decode_dev_addr(data[0:4]).hex()
     fhdr.fCtrl = FCTRL(data[4:5])
-    fCnt_byte = data[5:7]
-    fCnt_byte += bytearray(2)
-    fhdr.fCnt = int.from_bytes(fCnt_byte, 'little')
+    f_cnt_byte = data[5:7]
+    f_cnt_byte += bytearray(2)
+    fhdr.fCnt = int.from_bytes(f_cnt_byte, 'little')
     if len(data) > 7:
         fhdr.fOpts = []
         fhdr.fOpts.append(Frame(base64.b64encode(data[7:])))
     return fhdr
 
 
-def encodeDevAddr(data):
+def encode_dev_addr(data):
     return data[::+1]
 
 
-def encodeFHDR(fhdr):
+def encode_fhdr(fhdr):
     byte = bytearray()
-    byte += encodeDevAddr(int(fhdr.devAddr, 16).to_bytes(4, 'little'))
-    byte += fhdr.fCtrl.getByte()
+    byte += encode_dev_addr(int(fhdr.devAddr, 16).to_bytes(4, 'little'))
+    byte += fhdr.fCtrl.get_byte()
     byte += fhdr.fCnt.to_bytes(2, 'little')
     return byte
 
@@ -88,21 +88,21 @@ def decode_data_payload_to_mac_commands(is_uplink, frames):
     i = 0
     while i < len(data):
         mac_command_payload = MacCommandItem()
-        command_type = MacCommandEnum.findByKey(data[i], is_uplink)
+        command_type = MacCommandEnum.find_by_key(data[i], is_uplink)
         if command_type is None:
             raise Exception("Unknown mac command")
-        payloadLenght = command_type.getPayloadLenght()
-        mac_command_payload.cid = command_type.getName()
-        mac_command_payload.payload = get_command_payload(command_type, data[i + 1:i + 1 + payloadLenght])
+        payload_lenght = command_type.get_payload_lenght()
+        mac_command_payload.cid = command_type.get_name()
+        mac_command_payload.payload = get_command_payload(command_type, data[i + 1:i + 1 + payload_lenght])
         mac_command_payload_list.append(mac_command_payload)
-        i = i + 1 + payloadLenght
+        i = i + 1 + payload_lenght
 
     return mac_command_payload_list
 
 
 def encode_mac_payload(cid, mac_command):
-    b = bytearray(cid.getPayloadLenght() + 1)
-    b[0] = cid.getKey()
+    b = bytearray(cid.get_payload_lenght() + 1)
+    b[0] = cid.get_key()
     mac_command_payload = mac_command.payload
     if cid == MacCommandEnum.DEVICE_STATUS_REQ:
         pass
@@ -138,7 +138,7 @@ def encode_mac_payload(cid, mac_command):
 def encode_mac_commands_to_data_payload(is_uplink, mac_commands):
     data = bytearray()
     for mac_command in mac_commands:
-        cid = MacCommandEnum.findByName(mac_command.cid, is_uplink)
+        cid = MacCommandEnum.find_by_name(mac_command.cid, is_uplink)
         if cid is None:
             raise Exception("Unknown command ")
         mac_payload_encoded = encode_mac_payload(cid, mac_command)
@@ -149,16 +149,16 @@ def encode_mac_commands_to_data_payload(is_uplink, mac_commands):
 
 # functions
 
-def decode_join_accept_mac_payload(app_key, dev_nonce, phyPayload):
+def decode_join_accept_mac_payload(app_key, dev_nonce, phy_payload):
     join_accept_mac_payload = JoinAccpetMacPayload()
-    mac_payload_byte_encrypted = base64.b64decode(phyPayload.macPayload.bytes)
-    mic_encrypted = bytes.fromhex(phyPayload.mic)
+    mac_payload_byte_encrypted = base64.b64decode(phy_payload.macPayload.bytes)
+    mic_encrypted = bytes.fromhex(phy_payload.mic)
     key = bytes.fromhex(app_key)
     mac_payload_byte = encrypt_mac_payload(app_key, mac_payload_byte_encrypted, mic_encrypted)
 
     join_accept_mac_payload.app_nonce = int.from_bytes(mac_payload_byte[0:3], 'little')
-    join_accept_mac_payload.net_ID = decodeNetID(mac_payload_byte[3:6]).hex()
-    join_accept_mac_payload.dev_addr = decodeDevAddr(mac_payload_byte[6:10]).hex()
+    join_accept_mac_payload.net_ID = decode_net_id(mac_payload_byte[3:6]).hex()
+    join_accept_mac_payload.dev_addr = decode_dev_addr(mac_payload_byte[6:10]).hex()
     join_accept_mac_payload.DL_settings = mac_payload_byte[10:11].hex()
     join_accept_mac_payload.rx_delay = mac_payload_byte[11]
     join_accept_mac_payload.CF_list = base64.b64encode(mac_payload_byte[12:]).decode()
@@ -191,156 +191,156 @@ def decode_fopts_payload_to_mac_commands(is_uplink, frames):
     return decode_data_payload_to_mac_commands(is_uplink, data)
 
 
-def decode_frm_payload_to_mac_commands(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, frames):
+def decode_frm_payload_to_mac_commands(app_skey, net_skey, f_port, is_uplink, dev_addr, f_cnt, frames):
     data = []
     if frames is None or len(frames) <= 0:
         return data
-    if fPort is None or fPort > 0:
+    if f_port is None or f_port > 0:
         return data
     for frame in frames:
         data.append(bytearray(base64.b64decode(frame.bytes)))
 
-    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
+    dev_addr_byte = encode_dev_addr(int(dev_addr, 16).to_bytes(4, 'little'))
 
     encrypted_data = []
     for d in data:
-        encrypted_data.append(encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, d))
+        encrypted_data.append(encrypt_frm_payload(app_skey, net_skey, f_port, is_uplink, dev_addr_byte, f_cnt, d))
 
     return decode_data_payload_to_mac_commands(is_uplink, encrypted_data)
 
 
-def encode_mac_commands_to_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr, fCnt, mac_commands):
+def encode_mac_commands_to_frm_payload(app_skey, net_skey, f_port, is_uplink, dev_addr, f_cnt, mac_commands):
     data = encode_mac_commands_to_data_payload(is_uplink, mac_commands)
 
-    dev_addr_byte = encodeDevAddr(int(dev_addr, 16).to_bytes(4, 'little'))
-    encrypted_data = encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data)
+    dev_addr_byte = encode_dev_addr(int(dev_addr, 16).to_bytes(4, 'little'))
+    encrypted_data = encrypt_frm_payload(app_skey, net_skey, f_port, is_uplink, dev_addr_byte, f_cnt, data)
 
     return base64.b64encode(encrypted_data).decode()
 
 
-def decodePhyPayload(phy_payload_encoded):
+def decode_phy_payload(phy_payload_encoded):
     data = base64.b64decode(phy_payload_encoded)
 
-    phyPayload = PhyPayload()
-    mhdrByte = data[0].to_bytes(1, 'big')
-    macPayloadByte = data[1:-4]
+    phy_payload = PhyPayload()
+    mhdr_byte = data[0].to_bytes(1, 'big')
+    mac_payload_byte = data[1:-4]
     mic = data[-4:]
-    assert (len(data) == len(mhdrByte) + len(macPayloadByte) + len(mic))
+    assert (len(data) == len(mhdr_byte) + len(mac_payload_byte) + len(mic))
 
-    mtype_key = MType(mhdrByte)
-    major_key = Major(mhdrByte)
-    mtype = MessageTypeEnum.findByKey(mtype_key)
-    major = MajorTypeEnum.findByKey(major_key)
+    mtype_key = get_mtype(mhdr_byte)
+    major_key = get_major(mhdr_byte)
+    mtype = MessageTypeEnum.find_by_key(mtype_key)
+    major = MajorTypeEnum.find_by_key(major_key)
 
-    phyPayload.mhdr = MHDR()
+    phy_payload.mhdr = MHDR()
 
     if major != MajorTypeEnum.LoRaWANR1:
         raise Exception("Lorawan version must be 1.0 or 1.1")
 
-    phyPayload.mhdr.major = major.getName()
+    phy_payload.mhdr.major = major.get_name()
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
-        #print(" *** Join-request")
-        joinEUI = data[1:9]
-        devEUI = data[9:17]
+        # print(" *** Join-request")
+        join_eui = data[1:9]
+        dev_eui = data[9:17]
         nonce = data[17:19]
 
-        phyPayload.macPayload = MacPayload()
-        joinEUI = joinEUI[::-1]
-        devEUI = devEUI[::-1]
+        phy_payload.macPayload = MacPayload()
+        join_eui = join_eui[::-1]
+        dev_eui = dev_eui[::-1]
         nonce = nonce[::-1]
-        phyPayload.mhdr.mType = mtype.getName()
-        phyPayload.macPayload.joinEUI = joinEUI.hex()
-        phyPayload.macPayload.devEUI = devEUI.hex()
-        phyPayload.macPayload.devNonce = int.from_bytes(nonce, 'big')
-        phyPayload.mic = mic.hex()
-        # print("  JoinEUI: %s" % joinEUI.hex())
-        # print("  DevEUI: %s" % devEUI.hex())
+        phy_payload.mhdr.mType = mtype.get_name()
+        phy_payload.macPayload.joinEUI = join_eui.hex()
+        phy_payload.macPayload.devEUI = dev_eui.hex()
+        phy_payload.macPayload.devNonce = int.from_bytes(nonce, 'big')
+        phy_payload.mic = mic.hex()
+        # print("  JoinEUI: %s" % join_eui.hex())
+        # print("  DevEUI: %s" % dev_eui.hex())
         # print("  Nonce:  %s" % nonce.hex())
         # print("  MIC: %s" % mic.hex())
     elif mtype == MessageTypeEnum.JOIN_ACCEPT:
-        #print(" *** Join Accept")
-        phyPayload.mhdr.mType = mtype.getName()
-        phyPayload.macPayload = MacPayload()
-        phyPayload.macPayload.bytes = base64.b64encode(macPayloadByte).decode()
-        phyPayload.mic = mic.hex()
+        # print(" *** Join Accept")
+        phy_payload.mhdr.mType = mtype.get_name()
+        phy_payload.macPayload = MacPayload()
+        phy_payload.macPayload.bytes = base64.b64encode(mac_payload_byte).decode()
+        phy_payload.mic = mic.hex()
         # print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
     elif mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
                    MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
-        phyPayload.mhdr.mType = mtype.getName()
-        data_len = len(macPayloadByte)
-        macPayload = MacPayload()
+        phy_payload.mhdr.mType = mtype.get_name()
+        data_len = len(mac_payload_byte)
+        mac_payload = MacPayload()
 
         if data_len < 7:
             raise Exception("lorawan: at least 7 bytes needed to decode FHDR")
-        fCtrl = FCTRL(macPayloadByte[4:5])
+        f_ctrl = FCTRL(mac_payload_byte[4:5])
 
-        if data_len < 7 + fCtrl.fOptsLen:
+        if data_len < 7 + f_ctrl.fOptsLen:
             raise Exception("lorawan: not enough bytes to decode FHDR")
-        macPayload.fhdr = decodeFHDR(macPayloadByte[0:7 + fCtrl.fOptsLen])
+        mac_payload.fhdr = decode_fhdr(mac_payload_byte[0:7 + f_ctrl.fOptsLen])
 
-        if data_len > 7 + fCtrl.fOptsLen:
-            macPayload.fPort = macPayloadByte[7 + fCtrl.fOptsLen]
+        if data_len > 7 + f_ctrl.fOptsLen:
+            mac_payload.fPort = mac_payload_byte[7 + f_ctrl.fOptsLen]
 
-        if len(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:]) > 0:
-            if macPayload.fPort is not None and macPayload.fPort == 0 and fCtrl.fOptsLen > 0:
+        if len(mac_payload_byte[7 + mac_payload.fhdr.fCtrl.fOptsLen + 1:]) > 0:
+            if mac_payload.fPort is not None and mac_payload.fPort == 0 and f_ctrl.fOptsLen > 0:
                 raise Exception("lorawan: FPort must not be 0 when FOpts are set")
-            macPayload.frmPayload.append(
-                Frame(base64.b64encode(macPayloadByte[7 + macPayload.fhdr.fCtrl.fOptsLen + 1:])))
+            frame_bytes = base64.b64encode(mac_payload_byte[7 + mac_payload.fhdr.fCtrl.fOptsLen + 1:])
+            mac_payload.frmPayload.append(Frame(frame_bytes))
 
-        phyPayload.macPayload = macPayload
-        phyPayload.mic = mic.hex()
+        phy_payload.macPayload = mac_payload
+        phy_payload.mic = mic.hex()
 
-        #print(" *** ", mtype.getName())
+        # print(" *** ", mtype.get_name())
 
-        # print("  DevAddr: %08s  " % phyPayload.macPayload.fhdr.devAddr)
-        # print("  fCtrl: %02s" % phyPayload.macPayload.fhdr.fCtrl.getString())
-        # print("  fCnt: %05d   fPort: %01x" % (phyPayload.macPayload.fhdr.fCnt, phyPayload.macPayload.fPort))
-        # if len(phyPayload.macPayload.frmPayload) > 0:
-        # print("  FRMPayload: %04s " % phyPayload.macPayload.frmPayload[0].bytes)
-        # print("  mic: %04s " % phyPayload.mic)
+        # print("  DevAddr: %08s  " % phy_payload.macPayload.fhdr.devAddr)
+        # print("  fCtrl: %02s" % phy_payload.macPayload.fhdr.fCtrl.get_string())
+        # print("  f_cnt: %05d   f_port: %01x" % (phy_payload.macPayload.fhdr.fCnt, phy_payload.macPayload.fPort))
+        # if len(phy_payload.macPayload.frmPayload) > 0:
+        # print("  FRMPayload: %04s " % phy_payload.macPayload.frmPayload[0].bytes)
+        # print("  mic: %04s " % phy_payload.mic)
     else:
         print(f"{BColors.WARNING.value}Unsupported type{BColors.ENDC.value}")
 
-    return phyPayload
+    return phy_payload
 
 
-def encodePhyPayload(phyPayload):
-    mtype = MessageTypeEnum.findByName(phyPayload.mhdr.mType)
+def encode_phy_payload(phy_payload):
+    mtype = MessageTypeEnum.find_by_name(phy_payload.mhdr.mType)
     data = bytearray()
 
     if mtype == MessageTypeEnum.JOIN_REQUEST:
-        joinEUI = int(phyPayload.macPayload.joinEUI, 16).to_bytes(8, 'big')
-        devEUI = int(phyPayload.macPayload.devEUI, 16).to_bytes(8, 'big')
-        nonce = phyPayload.macPayload.devNonce.to_bytes(2, 'big')
+        join_eui = int(phy_payload.macPayload.joinEUI, 16).to_bytes(8, 'big')
+        dev_eui = int(phy_payload.macPayload.devEUI, 16).to_bytes(8, 'big')
+        nonce = phy_payload.macPayload.devNonce.to_bytes(2, 'big')
 
-        data += (mtype.getKey() << 5).to_bytes(1, 'big')
-        joinEUI = joinEUI[::-1]
-        devEUI = devEUI[::-1]
+        data += (mtype.get_key() << 5).to_bytes(1, 'big')
+        join_eui = join_eui[::-1]
+        dev_eui = dev_eui[::-1]
         nonce = nonce[::-1]
-        data += joinEUI
-        data += devEUI
+        data += join_eui
+        data += dev_eui
         data += nonce
-        data += int(phyPayload.mic, 16).to_bytes(4, 'big')
+        data += int(phy_payload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
     if mtype == MessageTypeEnum.JOIN_ACCEPT:
-        data += (mtype.getKey() << 5).to_bytes(1, 'big')
-        data += base64.b64decode(phyPayload.macPayload.bytes.encode())
-        data += int(phyPayload.mic, 16).to_bytes(4, 'big')
+        data += (mtype.get_key() << 5).to_bytes(1, 'big')
+        data += base64.b64decode(phy_payload.macPayload.bytes.encode())
+        data += int(phy_payload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
     if mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
-                   MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
+                 MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
 
-        data += (mtype.getKey() << 5).to_bytes(1, 'big')
+        data += (mtype.get_key() << 5).to_bytes(1, 'big')
 
-        data += encodeFHDR(phyPayload.macPayload.fhdr)
-        data += int(phyPayload.macPayload.fPort).to_bytes(1, 'big')
+        data += encode_fhdr(phy_payload.macPayload.fhdr)
+        data += int(phy_payload.macPayload.fPort).to_bytes(1, 'big')
 
-        frmPayload = phyPayload.macPayload.frmPayload
-        for frame in frmPayload:
+        frm_payload = phy_payload.macPayload.frmPayload
+        for frame in frm_payload:
             data += base64.b64decode(frame.bytes.encode())
 
-        data += int(phyPayload.mic, 16).to_bytes(4, 'big')
+        data += int(phy_payload.mic, 16).to_bytes(4, 'big')
 
         return base64.b64encode(data).decode()
 
@@ -348,19 +348,19 @@ def encodePhyPayload(phyPayload):
     return None
 
 
-def encodePhyPayloadFromJson(json_packet):
-    return encodePhyPayload(getPhyPayloadFromJson(json_packet))
+def encode_phy_payload_from_json(json_packet):
+    return encode_phy_payload(get_phy_payload_from_json(json_packet))
 
 
-def getPhyPayloadFromJson(json_packet):
+def get_phy_payload_from_json(json_packet):
     p = PhyPayload()
     p.mhdr.mType = json_packet['mhdr']['mType']
     p.mhdr.major = json_packet['mhdr']['major']
-    if p.mhdr.mType == MessageTypeEnum.JOIN_REQUEST.getName():
+    if p.mhdr.mType == MessageTypeEnum.JOIN_REQUEST.get_name():
         p.macPayload.joinEUI = json_packet['macPayload']['joinEUI']
         p.macPayload.devEUI = json_packet['macPayload']['devEUI']
         p.macPayload.devNonce = json_packet['macPayload']['devNonce']
-    elif p.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.getName():
+    elif p.mhdr.mType == MessageTypeEnum.JOIN_ACCEPT.get_name():
         p.macPayload.bytes = json_packet['macPayload']['bytes']
     else:
         p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']

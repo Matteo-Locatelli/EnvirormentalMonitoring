@@ -10,18 +10,18 @@ MIN_TIME_TO_SEND = 4000
 MIN_TIME_TO_RECEIVE = 4000
 
 
-def getWatchdogAppServer(payload_msg):
+def get_watchdog_app_server(payload_msg):
     watchdog_app_server = WatchdogAppServer()
-    watchdog = Watchdog(applicationID=payload_msg['applicationID'],
-                        deviceName=payload_msg['deviceName'],
-                        devEUI=base64.b64decode(payload_msg['devEUI'].encode()).hex(),
-                        devAddr=base64.b64decode(payload_msg['devAddr'].encode()).hex())
+    watchdog = Watchdog(application_id=payload_msg['applicationID'],
+                        device_name=payload_msg['deviceName'],
+                        dev_eui=base64.b64decode(payload_msg['devEUI'].encode()).hex(),
+                        dev_addr=base64.b64decode(payload_msg['devAddr'].encode()).hex())
     watchdog_app_server.watchdog = watchdog
     watchdog_app_server.last_seen = round(datetime.now().timestamp())
     return watchdog_app_server
 
 
-def getWatchdogConfiguration(watchdog_app_server):
+def get_watchdog_configuration(watchdog_app_server):
     watchdog_configuration = DownlinkConfigurationPayload()
     battery_level = watchdog_app_server.watchdog.batteryLevel
     if battery_level > 50:

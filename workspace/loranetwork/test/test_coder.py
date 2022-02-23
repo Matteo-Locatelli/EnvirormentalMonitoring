@@ -128,35 +128,35 @@ class TestCoder(unittest.TestCase):
 
     # Comparison between payloads in the format of Base64
     # encodePhyPayloadFromJSON: JSON -> Base64
-    def test_encodePhyPayload(self):
-        print("\n test_encodePhyPayload")
-        self.assertEqual(self.payloads[0], coder.encodePhyPayloadFromJson(self.jsons[0]))
-        self.assertEqual(self.payloads[1], coder.encodePhyPayloadFromJson(self.jsons[1]))
-        self.assertEqual(self.payloads[2], coder.encodePhyPayloadFromJson(self.jsons[2]))
-        self.assertEqual(self.payloads[3], coder.encodePhyPayloadFromJson(self.jsons[3]))
+    def test_encode_phy_payload(self):
+        print("\n test_encode_phy_payload")
+        self.assertEqual(self.payloads[0], coder.encode_phy_payload_from_json(self.jsons[0]))
+        self.assertEqual(self.payloads[1], coder.encode_phy_payload_from_json(self.jsons[1]))
+        self.assertEqual(self.payloads[2], coder.encode_phy_payload_from_json(self.jsons[2]))
+        self.assertEqual(self.payloads[3], coder.encode_phy_payload_from_json(self.jsons[3]))
 
     # Comparison between JSONs of the payloads
-    # decodePhyPayload: Base64 -> PhyPayload
+    # decode_phy_payload: Base64 -> PhyPayload
     # getJSONFromObject: Object -> JSON
     # notEquals because the field 'f0pts' is removed from the decoded PhyPayload
     # JSON 0-2: differences in 'fOptsLen' and 'fOpts'
     # JSON 1-3: differences in 'fOptsLen' and 'fOpts' and 'frmPayload'
-    def test_decodePhyPayload(self):
+    def test_decode_phy_payload(self):
         print("\n test_decodePhyPayloads")
-        self.assertNotEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[0])), self.jsons[0])
-        self.assertNotEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[1])), self.jsons[1])
-        self.assertNotEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[2])), self.jsons[2])
-        self.assertNotEqual(payload_util.getJsonFromObject(coder.decodePhyPayload(self.payloads[3])), self.jsons[3])
+        self.assertNotEqual(payload_util.get_json_from_object(coder.decode_phy_payload(self.payloads[0])), self.jsons[0])
+        self.assertNotEqual(payload_util.get_json_from_object(coder.decode_phy_payload(self.payloads[1])), self.jsons[1])
+        self.assertNotEqual(payload_util.get_json_from_object(coder.decode_phy_payload(self.payloads[2])), self.jsons[2])
+        self.assertNotEqual(payload_util.get_json_from_object(coder.decode_phy_payload(self.payloads[3])), self.jsons[3])
 
     # Comparison between PhyPayloads
     # decodePhyPayloads: Base64 -> PhyPayload
-    # getPhyPayloadFromJson: JSON -> PhyPayload
-    def test_phyPayload(self):
+    # get_phy_payload_from_json: JSON -> PhyPayload
+    def test_phy_payload(self):
         print("\n test_payPhyload")
-        self.assertEqual(coder.decodePhyPayload(self.payloads[0]), coder.getPhyPayloadFromJson(self.jsons[0]))
-        self.assertEqual(coder.decodePhyPayload(self.payloads[1]), coder.getPhyPayloadFromJson(self.jsons[1]))
-        self.assertEqual(coder.decodePhyPayload(self.payloads[2]), coder.getPhyPayloadFromJson(self.jsons[2]))
-        self.assertEqual(coder.decodePhyPayload(self.payloads[3]), coder.getPhyPayloadFromJson(self.jsons[3]))
+        self.assertEqual(coder.decode_phy_payload(self.payloads[0]), coder.get_phy_payload_from_json(self.jsons[0]))
+        self.assertEqual(coder.decode_phy_payload(self.payloads[1]), coder.get_phy_payload_from_json(self.jsons[1]))
+        self.assertEqual(coder.decode_phy_payload(self.payloads[2]), coder.get_phy_payload_from_json(self.jsons[2]))
+        self.assertEqual(coder.decode_phy_payload(self.payloads[3]), coder.get_phy_payload_from_json(self.jsons[3]))
 
 
 if __name__ == '__main__':

@@ -9,15 +9,15 @@ from enums.lorawan_version_enum import LorawanVersionEnum
 T = TypeVar('T')
 
 
-def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCnt, data):
-    if fPort == 0:
+def encrypt_frm_payload(app_skey, net_skey, f_port, is_uplink, dev_addr_byte, f_cnt, data):
+    if f_port == 0:
         key = bytes.fromhex(net_skey)
     else:
         key = bytes.fromhex(app_skey)
 
-    pLen = len(data)
-    if pLen % 16 != 0:
-        data += bytearray(16 - (pLen % 16))
+    p_len = len(data)
+    if p_len % 16 != 0:
+        data += bytearray(16 - (p_len % 16))
 
     cipher = AES.new(key, AES.MODE_ECB)
 
@@ -27,7 +27,7 @@ def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCn
         a[5] = 0x01
 
     a[6:10] = dev_addr_byte
-    temp = fCnt.to_bytes(2, 'little')
+    temp = f_cnt.to_bytes(2, 'little')
     temp += bytearray(2)
     a[10:14] = temp
 
@@ -44,7 +44,7 @@ def encrypt_frm_payload(app_skey, net_skey, fPort, is_uplink, dev_addr_byte, fCn
 
         i += 1
 
-    return data[0:pLen]
+    return data[0:p_len]
 
 
 def encrypt_mac_payload(app_key, mac_payload, mic):
@@ -65,7 +65,7 @@ def encrypt_mac_payload(app_key, mac_payload, mic):
         text[offset: offset + 16] = cipher.encrypt(ciphertext[offset:offset + 16])
         i += 1
 
-    # phyPayload.mic = text[-4:].hex()
+    # phy_payload.mic = text[-4:].hex()
     return text[0:-4]
 
 
@@ -120,19 +120,18 @@ def compute_join_request_mic(phy_payload, app_key):
     return mic.hex()
 
 
-def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey, is_uplink):
+def compute_data_mic(phy_payload, mac_version, conf_f_cnt, tx_dr, tx_ch, f_nwk_s_int_key, is_uplink):
     mic = bytearray(4)
-    key = bytes.fromhex(fNwkSIntKey)
-    sNwkSIntKey = bytearray(16)
+    key = bytes.fromhex(f_nwk_s_int_key)
     mhdr = phy_payload[0:1]
     mac_payload = phy_payload[1:-4]
     fhdr = mac_payload[0:7]
 
     # confFCnt set to 0 when there are no ack
     if (int.from_bytes(fhdr[4:5], 'big') & 0x20) != 0:
-        confFCnt = 0
+        conf_f_cnt = 0
 
-    confFCnt = confFCnt % (1 << 16)
+    conf_f_cnt = conf_f_cnt % (1 << 16)
 
     mic_bytes = bytearray()
     mic_bytes += mhdr
@@ -150,7 +149,7 @@ def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey
     fhdr = mac_payload[0:7]
     dev_adress_byte = fhdr[0:4]
 
-    # devAddr
+    # dev_addr
     b0[6:10] = dev_adress_byte
     b1[6:10] = dev_adress_byte
 
@@ -164,9 +163,9 @@ def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey
     b1[15] = len(mic_bytes)
 
     # set up remaining bytes
-    b1[1:3] = confFCnt.to_bytes(2, 'little')
-    b1[3] = txDR
-    b1[4] = txCh
+    b1[1:3] = conf_f_cnt.to_bytes(2, 'little')
+    b1[3] = tx_dr
+    b1[4] = tx_ch
 
     fn_mic = CMAC.new(key, ciphermod=AES)
 
@@ -179,8 +178,8 @@ def compute_data_mic(phy_payload, mac_version, confFCnt, txDR, txCh, fNwkSIntKey
     return mic.hex()
 
 
-def getJsonFromObject(obj: T):
-    json_str_object = json.dumps(obj.toJson())
+def get_json_from_object(obj: T):
+    json_str_object = json.dumps(obj.to_json())
     json_object = json.loads(json_str_object)
 
     def remove_nulls(d):

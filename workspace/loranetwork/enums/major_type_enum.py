@@ -5,22 +5,22 @@ class MajorTypeEnum(Enum):
     LoRaWANR1 = (0, "LoRaWANR1")
     LoRaWANR0 = (1, "LoRaWANR0")
 
-    def getKey(self):
+    def get_key(self):
         return self.value[0]
 
-    def getName(self):
+    def get_name(self):
         return self.value[1]
 
     @staticmethod
-    def findByKey(key):
+    def find_by_key(key):
         for major_type in MajorTypeEnum:
-            if major_type.getKey() == key:
+            if major_type.get_key() == key:
                 return major_type
         return None
 
     @staticmethod
-    def findByName(name):
+    def find_by_name(name):
         for major_type in MajorTypeEnum:
-            if major_type.getName() == name:
+            if major_type.get_name() == name:
                 return major_type
         return None

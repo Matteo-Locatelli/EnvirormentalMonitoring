@@ -10,23 +10,23 @@ from nodes.watchdog import Watchdog
 from threads.thread_appserver import ThreadAppServer
 from threads.thread_edgenode import ThreadEdgenode
 from threads.thread_watchdog import ThreadWatchdog
-from utils.api_utils import getDeviceKey, getDeviceList, getGatewayList
+from utils.api_utils import get_device_key, get_device_list, get_gateway_list
 
 # broker address
 broker = "172.24.167.134"
 port = 1883
 
 # configuration
-applicationID = 1
-app_server_enabled = False
+application_id = 1
+app_server_enabled = True
 
 
-def getDevices():
+def get_devices():
     limit = 100
     offset = 0
     device_list = []
     while True:
-        resp = getDeviceList(applicationID, limit, offset)
+        resp = get_device_list(application_id, limit, offset)
         device_list.extend(resp.result)
         if resp.total_count <= (len(resp.result) + offset):
             break
@@ -34,12 +34,12 @@ def getDevices():
     return device_list
 
 
-def getGateways():
+def get_gateways():
     limit = 100
     offset = 0
     gateway_list = []
     while True:
-        resp = getGatewayList(limit, offset)
+        resp = get_gateway_list(limit, offset)
         gateway_list.extend(resp.result)
         if resp.total_count <= (len(resp.result) + offset):
             break
@@ -49,7 +49,7 @@ def getGateways():
 
 def activate_watchdogs(watchdog_list):
     for watchdog in watchdog_list:
-        resp = getDeviceKey(watchdog.devEUI)
+        resp = get_device_key(watchdog.devEUI)
         watchdog.app_key = resp.device_keys.nwk_key
         watchdog.join()
 
@@ -61,13 +61,13 @@ def assign_watchdogs_to_gateways(watchdog_list, gateway_list):
 
     i = 0
     j = 0
-    threadLock = threading.Lock()
+    thread_lock = threading.Lock()
     while i < len(watchdog_list):
         if i % devices_per_gateway == 0 and i > 0:
-            threadLock = threading.Lock()
+            thread_lock = threading.Lock()
             j += 1
-        criticalSectionLock = threading.Lock()
-        thread_watchdog = ThreadWatchdog(watchdog_list[i], threadLock, criticalSectionLock)
+        critical_section_lock = threading.Lock()
+        thread_watchdog = ThreadWatchdog(watchdog_list[i], thread_lock, critical_section_lock)
         thread_edgenode = ThreadEdgenode(gateway_list[j])
 
         watchdog_list[i].gateway = gateway_list[j]
@@ -94,11 +94,11 @@ def terminate_watchdog_threads(thread_watchdog_list):
 
 def main():
     # get nodes
-    devices = getDevices()
-    gateways = getGateways()
+    devices = get_devices()
+    gateways = get_gateways()
 
     # App Server
-    app_server = AppServer(broker=broker, port=port, id_application=applicationID, ip="localhost")
+    app_server = AppServer(broker=broker, port=port, id_application=application_id, ip="localhost")
 
     # Node list creation
     gateway_list = []
@@ -115,10 +115,10 @@ def main():
 
     watchdog_list = []
     for device in devices:
-        watchdog_list.append(Watchdog(applicationID=device.application_id, deviceName=device.name,
-                                      deviceProfileID=device.device_profile_id, devEUI=device.dev_eui,
-                                      batteryLevelUnavailable=False,
-                                      batteryLevel=244, margin=device.device_status_margin))
+        watchdog_list.append(Watchdog(application_id=device.application_id, device_name=device.name,
+                                      device_profile_id=device.device_profile_id, dev_eui=device.dev_eui,
+                                      battery_level_unavailable=False,
+                                      battery_level=244, margin=device.device_status_margin))
 
     thread_watchdog_list, thread_gateway_list = assign_watchdogs_to_gateways(watchdog_list, gateway_list)
     thread_app_server = ThreadAppServer(app_server)

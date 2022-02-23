@@ -1,15 +1,15 @@
-from utils.api_utils import getDeviceList, getDeviceKey, getGatewayList
+from utils.api_utils import get_device_list, get_device_key, get_gateway_list
 
-devEUI = "0ac14aad3e6391a1"
-resp = getDeviceKey(devEUI)
+dev_eui = "0ac14aad3e6391a1"
+resp = get_device_key(dev_eui)
 print(resp)
 
-applicationID = 1
+application_id = 1
 limit = 1
 offset = 0
 device_list = []
 while True:
-    resp2 = getDeviceList(applicationID, limit, offset)
+    resp2 = get_device_list(application_id, limit, offset)
     print(resp2)
     device_list.extend(resp2.result)
     if resp2.total_count <= (len(resp2.result) + offset):
@@ -21,4 +21,4 @@ print(type(device_list[0].device_profile_id))
 print("**")
 print(device_list[1])
 
-print(getGatewayList(limit, offset))
+print(get_gateway_list(limit, offset))

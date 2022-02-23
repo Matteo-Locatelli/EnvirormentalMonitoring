@@ -2,17 +2,17 @@ import json
 
 
 class MacCommandPayload:
-    def __init__(self, battery=None, margin=None, chIndex=None, freq=None, maxDR=None, minDR=None):
+    def __init__(self, battery=None, margin=None, ch_index=None, freq=None, max_dr=None, min_dr=None):
         # DevStatusAns
         self.battery = battery
         self.margin = margin
         # NewChannelReq
-        self.chIndex = chIndex
+        self.chIndex = ch_index
         self.freq = freq
-        self.maxDR = maxDR
-        self.minDR = minDR
+        self.maxDR = max_dr
+        self.minDR = min_dr
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
 
@@ -21,5 +21,5 @@ class MacCommandItem:
         self.cid = cid
         self.payload = payload
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)

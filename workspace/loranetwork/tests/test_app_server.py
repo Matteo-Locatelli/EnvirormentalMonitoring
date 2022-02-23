@@ -1,21 +1,21 @@
 import time
 from appserver.appserver import AppServer
 from threads.thread_appserver import ThreadAppServer
-from utils.api_utils import getDeviceList
+from utils.api_utils import get_device_list
 
 broker = "172.24.167.134"
 port = 1883
 
 # configuration
-applicationID = 1
+application_id = 1
 
 
-def getDevices():
+def get_devices():
     limit = 100
     offset = 0
     device_list = []
     while True:
-        resp = getDeviceList(applicationID, limit, offset)
+        resp = get_device_list(application_id, limit, offset)
         device_list.extend(resp.result)
         if resp.total_count <= (len(resp.result) + offset):
             break
@@ -24,9 +24,9 @@ def getDevices():
 
 
 def main():
-    devices = getDevices()
+    devices = get_devices()
 
-    app_server = AppServer(broker=broker, port=port, id_application=applicationID, ip="localhost")
+    app_server = AppServer(broker=broker, port=port, id_application=application_id, ip="localhost")
     thread_app_server = ThreadAppServer(app_server)
     thread_app_server.start(devices)
     finish = 1

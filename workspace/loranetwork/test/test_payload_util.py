@@ -23,7 +23,7 @@ class TestPayloadUtil(unittest.TestCase):
         self.LoRaWANR1_0 = "LoRaWANR1"
 
         # Join request
-        self.payload_join_request = "AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI="
+        self.payloadJoinRequest = "AAAAAAAAAAAAoZFjPq1KwQofzd9qzRI="
 
         self.json_join_request = {
             "mhdr": {
@@ -93,11 +93,11 @@ class TestPayloadUtil(unittest.TestCase):
     # Comparison between the mic in the JSON "join_request" object and the mic computed by the function
     # compute_join_request_mic
     # @ Parameters: appKey: static
-    # @ Parameter: payload_join_request converted in hexadecimal number with b64decode
+    # @ Parameter: payloadJoinRequest converted in hexadecimal number with b64decode
     def test_compute_join_request_mic(self):
         print("\n Test Compute Join Request Mic")
         self.assertEqual(
-            payload_util.compute_join_request_mic(base64.b64decode(self.payload_join_request), self.appKey),
+            payload_util.compute_join_request_mic(base64.b64decode(self.payloadJoinRequest), self.appKey),
             self.mic_join_request)
 
     # Comparison between the mic in the JSON "compute_data" object and the mic computed by the function

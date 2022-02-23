@@ -7,32 +7,32 @@ import time
 from paho.mqtt.client import Client
 
 from payloads.mac_layer.phy_payload import PhyPayload
-from utils.coder import encodePhyPayloadFromJson, encodePhyPayload
+from utils.coder import encode_phy_payload_from_json, encode_phy_payload
 from utils.payload_util import compute_join_request_mic
 
 # indirizzo IP broker
 broker = "172.22.59.140"
-port = 1883;
+port = 1883
 
 # client_id
 client_id = "mosq-pyGateway"
 username = "chirpstack_gw"
 password = ""
-netSessionKey = "3cf0d4d88407fe11f2a9f2a125249b9f"
-appKey = "a772a9b9c627b3a41370b8a8646e6e80"
-appKeyByte = bytearray([0xa7, 0x72, 0xa9, 0xb9, 0xc6, 0x27, 0xb3, 0xa4, 0x13, 0x70, 0xb8, 0xa8, 0x64, 0x6e, 0x6e, 0x80])
+net_session_key = "3cf0d4d88407fe11f2a9f2a125249b9f"
+app_key = "a772a9b9c627b3a41370b8a8646e6e80"
+app_key_byte = bytearray([0xa7, 0x72, 0xa9, 0xb9, 0xc6, 0x27, 0xb3, 0xa4, 0x13, 0x70, 0xb8, 0xa8, 0x64, 0x6e, 0x6e, 0x80])
 
 # appSkeyByte = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 # gateway id
-idGateway = "f23ad78a721d2334"
-encodedIdGateway = base64.b64encode(int(idGateway, 16).to_bytes(8, 'big')).decode()
+id_gateway = "f23ad78a721d2334"
+encoded_id_gateway = base64.b64encode(int(id_gateway, 16).to_bytes(8, 'big')).decode()
 
 # topic
-conn_topic = "gateway/" + idGateway + "/state/conn"
-config_topic = "gateway/" + idGateway + "/device/configuration/indirizzo_device"
-up_topic = "gateway/" + idGateway + "/event/up"
-down_topic = "gateway/" + idGateway + "/command/down"
-stats_topic = "gateway/" + idGateway + "/event/stats"
+conn_topic = "gateway/" + id_gateway + "/state/conn"
+config_topic = "gateway/" + id_gateway + "/device/configuration/indirizzo_device"
+up_topic = "gateway/" + id_gateway + "/event/up"
+down_topic = "gateway/" + id_gateway + "/command/down"
+stats_topic = "gateway/" + id_gateway + "/event/stats"
 
 # Message types
 JOIN_REQUEST = "JoinRequest"
@@ -42,7 +42,7 @@ UNCONFIRMED_DATA_DOWN = "UnconfirmedDataDown"
 CONFIRMED_DATA_UP = "ConfirmedDataUp"
 CONFIRMED_DATA_DOWN = "ConfirmedDataDown"
 
-# Major
+# get_major
 LoRaWANR1 = "LoRaWANR1"
 LoRaWANR0 = "LoRaWANR0"
 
@@ -53,7 +53,7 @@ devNonce = random.randint(10000, 20000)
 
 # payloads
 conn_payload = {
-    "gatewayID": encodedIdGateway,
+    "gatewayID": encoded_id_gateway,
     "state": "ONLINE"
 }
 
@@ -97,7 +97,7 @@ up_payload = {
         }
     },
     "rxInfo": {
-        "gatewayID": encodedIdGateway,
+        "gatewayID": encoded_id_gateway,
         "rssi": -60,
         "loRaSNR": 7,
         "channel": 3,
@@ -113,7 +113,7 @@ up_payload = {
 }
 
 stats_payload = {
-    "gatewayID": encodedIdGateway,
+    "gatewayID": encoded_id_gateway,
     "ip": "172.21.185.160",
     "time": "2022-01-27T20:12:23Z",
     "location": None,
@@ -205,7 +205,7 @@ def stats_publish(client):
 
 
 def up_publish(client):
-    up_payload['phyPayload'] = encodePhyPayloadFromJson(testPhy)
+    up_payload['phyPayload'] = encode_phy_payload_from_json(testPhy)
     msg = json.dumps(up_payload)
     result = client.publish(up_topic, msg)
 
@@ -220,14 +220,14 @@ def join_request_publish(client):
     phyPayload = PhyPayload()
     phyPayload.mhdr.mType = JOIN_REQUEST
     phyPayload.mhdr.major = LoRaWANR1
-    phyPayload.macPayload.devEUI = devEUI
+    phyPayload.macPayload.dev_eui = devEUI
     phyPayload.macPayload.joinEUI = joinEUI
     phyPayload.macPayload.devNonce = devNonce
     phyPayload.mic = "0"
-    phyPayloadByte = base64.b64decode(encodePhyPayload(phyPayload))
-    phyPayload.mic = compute_join_request_mic(phyPayloadByte, appKey)
+    phyPayloadByte = base64.b64decode(encode_phy_payload(phyPayload))
+    phyPayload.mic = compute_join_request_mic(phyPayloadByte, app_key)
 
-    up_payload['phyPayload'] = encodePhyPayload(phyPayload)
+    up_payload['phyPayload'] = encode_phy_payload(phyPayload)
     msg = json.dumps(up_payload)
     result = client.publish(up_topic, msg)
 

@@ -7,28 +7,28 @@ class MacCommandEnum(Enum):
     NEW_CHANNEL_REQ = (7, "NewChannelReq", False, 5)
     NEW_CHANNEL_ANS = (7, "NewChannelAns", True, 1)
 
-    def getKey(self):
+    def get_key(self):
         return self.value[0]
 
-    def getName(self):
+    def get_name(self):
         return self.value[1]
 
-    def isUplink(self):
+    def is_uplink(self):
         return self.value[2]
 
-    def getPayloadLenght(self):
+    def get_payload_lenght(self):
         return self.value[3]
 
     @staticmethod
-    def findByKey(key, is_uplink):
+    def find_by_key(key, is_uplink):
         for mac_command in MacCommandEnum:
-            if mac_command.getKey() == key and mac_command.isUplink() == is_uplink:
+            if mac_command.get_key() == key and mac_command.is_uplink() == is_uplink:
                 return mac_command
         return None
 
     @staticmethod
-    def findByName(name, is_uplink):
+    def find_by_name(name, is_uplink):
         for mac_command in MacCommandEnum:
-            if mac_command.getName() == name and mac_command.isUplink() == is_uplink:
+            if mac_command.get_name() == name and mac_command.is_uplink() == is_uplink:
                 return mac_command
         return None

@@ -8,9 +8,8 @@ from paho.mqtt.client import Client
 
 from enums.bcolors import BColors
 from payloads.appserver.down_command_payload import DownCommandPayload
-from utils.api_utils import enqueue_device_downlink
-from utils.app_server_utils import getWatchdogAppServer, getWatchdogConfiguration
-from utils.payload_util import getJsonFromObject
+from utils.app_server_utils import get_watchdog_app_server, get_watchdog_configuration
+from utils.payload_util import get_json_from_object
 
 T = TypeVar('T')
 
@@ -74,7 +73,7 @@ class AppServer:
         if not self.client.is_connected():
             return print(f"{BColors.WARNING.value}Appserver not connected{BColors.ENDC.value}")
         # json conversion
-        json_payload = getJsonFromObject(payload)
+        json_payload = get_json_from_object(payload)
         message = json.dumps(json_payload)
 
         result = self.client.publish(topic, message)
@@ -84,10 +83,10 @@ class AppServer:
 
         return print(f"{BColors.FAIL.value}AppServer failed to send message to topic {topic}{BColors.ENDC.value}")
 
-    def subscribe(self, devEUI):
-        join_topic_to_sub = AppServer.join_topic % (self.id_application, devEUI)
-        up_topic_to_sub = AppServer.up_topic % (self.id_application, devEUI)
-        status_topic_to_sub = AppServer.status_topic % (self.id_application, devEUI)
+    def subscribe(self, dev_eui):
+        join_topic_to_sub = AppServer.join_topic % (self.id_application, dev_eui)
+        up_topic_to_sub = AppServer.up_topic % (self.id_application, dev_eui)
+        status_topic_to_sub = AppServer.status_topic % (self.id_application, dev_eui)
 
         self.client.subscribe(join_topic_to_sub)
         self.client.subscribe(up_topic_to_sub)
@@ -117,27 +116,28 @@ class AppServer:
         topic_type = topic_splitted[-2] + topic_splitted[-1]
         payload_decoded = json.loads(msg.payload.decode())
         if topic_type == "eventjoin":
-            devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
-            self.watchdogs[devEUI_decoded] = getWatchdogAppServer(payload_decoded)
+            dev_eui_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
+            self.watchdogs[dev_eui_decoded] = get_watchdog_app_server(payload_decoded)
         elif topic_type == "eventup":
-            devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
-            self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-            self.watchdogs[devEUI_decoded].active = True
+            dev_eui_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
+            self.watchdogs[dev_eui_decoded].last_seen = round(datetime.now().timestamp())
+            self.watchdogs[dev_eui_decoded].active = True
         elif topic_type == "eventstatus":
-            devEUI_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
-            self.watchdogs[devEUI_decoded].watchdog.batteryLevel = payload_decoded['batteryLevel']
-            self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
-            self.watchdogs[devEUI_decoded].watchdog.margin = payload_decoded['margin']
-            self.watchdogs[devEUI_decoded].last_seen = round(datetime.now().timestamp())
-            if self.watchdogs[devEUI_decoded].active and not self.watchdogs[devEUI_decoded].watchdog.batteryLevelUnavailable:
-                watchdog_configuration = getWatchdogConfiguration(self.watchdogs[devEUI_decoded])
-                string_to_send = watchdog_configuration.toJson()
+            dev_eui_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
+            self.watchdogs[dev_eui_decoded].watchdog.batteryLevel = payload_decoded['batteryLevel']
+            self.watchdogs[dev_eui_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
+            self.watchdogs[dev_eui_decoded].watchdog.margin = payload_decoded['margin']
+            self.watchdogs[dev_eui_decoded].last_seen = round(datetime.now().timestamp())
+            if self.watchdogs[dev_eui_decoded].active and \
+                    not self.watchdogs[dev_eui_decoded].watchdog.batteryLevelUnavailable:
+                watchdog_configuration = get_watchdog_configuration(self.watchdogs[dev_eui_decoded])
+                string_to_send = watchdog_configuration.to_json()
                 string_to_send_encoded = base64.b64encode(string_to_send.encode()).decode()
-                self.down_link_publish(devEUI_decoded, 1, False, string_to_send_encoded)
+                self.down_link_publish(dev_eui_decoded, 1, False, string_to_send_encoded)
                 # enqueue_device_downlink(devEUI_decoded, 1, False, string_to_send_encoded)
-                device_name = self.watchdogs[devEUI_decoded].watchdog.deviceName
+                device_name = self.watchdogs[dev_eui_decoded].watchdog.deviceName
                 print(
                     f"{BColors.OKGREEN.value}APPSERVER ENQUEQUE WATCHDOG {device_name} CONFIGURATION{BColors.ENDC.value}")
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

@@ -12,5 +12,5 @@ class WatchdogAppServer:
         self.battery_config = battery_config
         self.active = active
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)

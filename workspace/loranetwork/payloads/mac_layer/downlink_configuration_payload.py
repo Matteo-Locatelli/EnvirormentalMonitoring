@@ -6,5 +6,5 @@ class DownlinkConfigurationPayload:
         self.timetosend = timestosend
         self.timetoreceive = timetoreceive
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

@@ -8,5 +8,5 @@ class PacketsPerModulation:
         self.modulation = modulation
         self.count = count
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)
