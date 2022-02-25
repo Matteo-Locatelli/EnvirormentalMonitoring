@@ -36,4 +36,4 @@ class ThreadAppServer(Thread):
     def stop(self):
         self._running = False
         self.app_server.close_connection()
-        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD APPSERVER STOPPED{BColors.ENDC.value}")
+        print(f"{BColors.OKGREEN.value}{BColors.UNDERLINE.value}THREAD APPSERVER STOPPED{BColors.ENDC.value}")
