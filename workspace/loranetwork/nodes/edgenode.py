@@ -223,7 +223,7 @@ class EdgeNode:
                 self.rxPacketsReceivedOK += 1
             self.rxPacketsReceived += 1
         if msg.topic == ping_topic_to_sub:
-            self.echo_message_publish(message_decoded['id_gatway'], message_decoded['ping_id'])
+            self.echo_message_publish(message_decoded['gateway_id'], message_decoded['ping_id'])
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

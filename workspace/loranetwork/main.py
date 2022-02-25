@@ -18,7 +18,7 @@ port = 1883
 
 # configuration
 application_id = 1
-app_server_enabled = False
+app_server_enabled = True
 
 
 def get_devices():
@@ -126,7 +126,7 @@ def main():
     # starting threads
     for thread_gateway in thread_gateway_list:
         thread_gateway.start()
-    for thread_watchdog in []:
+    for thread_watchdog in thread_watchdog_list:
         thread_watchdog.start()
         time.sleep(2)
 
