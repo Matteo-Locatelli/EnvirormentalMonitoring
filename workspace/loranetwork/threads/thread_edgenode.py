@@ -20,6 +20,7 @@ class ThreadEdgenode(Thread):
             time.sleep(10)
 
     def stop(self):
-        self.gateway.close_connection()
-        self._running = False
-        print(f"{BColors.OKCYAN.value}{BColors.UNDERLINE.value}THREAD EDGENODE {self.gateway.id_gateway} STOPPED{BColors.ENDC.value}")
+        if self._running:
+            self._running = False
+            self.gateway.close_connection()
+            print(f"{BColors.OKCYAN.value}{BColors.UNDERLINE.value}THREAD EDGENODE {self.gateway.id_gateway} STOPPED{BColors.ENDC.value}")

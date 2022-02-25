@@ -3,7 +3,6 @@ from threading import Thread
 
 from appserver.gateway_appserver import GatewayAppServer
 from enums.bcolors import BColors
-from nodes.edgenode import EdgeNode
 
 
 class ThreadAppServer(Thread):
@@ -34,6 +33,7 @@ class ThreadAppServer(Thread):
             self.app_server.subscribe_ping(gateway.id_gateway)
 
     def stop(self):
-        self._running = False
-        self.app_server.close_connection()
-        print(f"{BColors.OKGREEN.value}{BColors.UNDERLINE.value}THREAD APPSERVER STOPPED{BColors.ENDC.value}")
+        if self._running:
+            self._running = False
+            self.app_server.close_connection()
+            print(f"{BColors.OKGREEN.value}{BColors.UNDERLINE.value}THREAD APPSERVER STOPPED{BColors.ENDC.value}")

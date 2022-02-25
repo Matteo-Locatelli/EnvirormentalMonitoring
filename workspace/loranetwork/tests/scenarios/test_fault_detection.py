@@ -1,5 +1,6 @@
 """Main module starting the application"""
 import math
+import random
 import threading
 import time
 
@@ -18,7 +19,7 @@ port = 1883
 
 # configuration
 application_id = 1
-app_server_enabled = False
+app_server_enabled = True
 
 
 def get_devices():
@@ -143,7 +144,7 @@ def main():
                                       battery_level_unavailable=False,
                                       battery_level=244, margin=device.device_status_margin))
 
-    thread_watchdog_list, thread_gateway_list = assign_watchdogs_to_gateways(watchdog_list, gateway_list)
+    thread_watchdog_list, thread_gateway_list = assign_watchdogs_to_gateways_full_connected(watchdog_list, gateway_list)
     thread_app_server = ThreadAppServer(app_server)
 
     # starting threads
@@ -156,6 +157,11 @@ def main():
     if app_server_enabled:
         thread_app_server.init_app_server(devices, gateway_list)
         thread_app_server.start()
+
+    # Fault simulation
+    time.sleep(10)
+    max_index = len(thread_gateway_list) - 1
+    thread_gateway_list[random.randint(0, max_index)].stop()
 
     finish = 1
     while finish != "0":

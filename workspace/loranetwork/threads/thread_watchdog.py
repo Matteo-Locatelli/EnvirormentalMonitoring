@@ -33,7 +33,6 @@ class ThreadWatchdog(Thread):
             current_millis = round(time.time() * 1000)
 
             if self.watchdog.batteryLevel <= 0:
-                self.finish_time = time.time()
                 self.stop()
                 break
 
@@ -57,7 +56,9 @@ class ThreadWatchdog(Thread):
                 self.previousMillisS = current_millis
 
     def stop(self):
-        self._running = False
-        life_time = round((self.finish_time - self.start_time)/60, 2)
-        print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} "
-              f"STOPPED - LIFE TIME {life_time} minutes {BColors.ENDC.value}")
+        if self._running:
+            self.finish_time = time.time()
+            self._running = False
+            life_time = round((self.finish_time - self.start_time)/60, 2)
+            print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} "
+                  f"STOPPED - LIFE TIME {life_time} minutes {BColors.ENDC.value}")

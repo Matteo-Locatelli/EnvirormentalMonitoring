@@ -53,14 +53,14 @@ class Watchdog:
         self.app_nonce = None
         self.net_ID = None
         self.dev_nonce = None
-        self.gateway = None
+        self.gateways = []
         self.active = False
         self.dev_addr = dev_addr
         self.fCntUp = 0  # da incrementare ad ogni invio
         self.fCntDown = 0  # da incrementare ogni ricezione
         self.data = []
-        self.timetosend = 4000  # timetosend ms
-        self.timetoreceive = 4000  # timetoreceive in ms
+        self.timetosend = 5000  # timetosend ms
+        self.timetoreceive = 5000  # timetoreceive in ms
         self.txInfo = tx_info
 
     def join(self):
@@ -75,7 +75,7 @@ class Watchdog:
         phy_payload_encoded = base64.b64decode(encode_phy_payload(phy_payload))
         phy_payload.mic = compute_join_request_mic(phy_payload_encoded, self.app_key)
         phy_payload_encoded = encode_phy_payload(phy_payload)
-        self.gateway.up_link_publish(phy_payload_encoded)
+        self.send(phy_payload_encoded)
         self.fCntUp += 1
 
     def send_data(self):
@@ -115,9 +115,12 @@ class Watchdog:
                                            self.net_skey, True)
         phy_payload_encoded = encode_phy_payload(phy_payload)
         self.fCntUp += 1
-        print(f"{BColors.HEADER.value}SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
         self.data.append(w_data)
-        self.gateway.up_link_publish(phy_payload_encoded)
+        if self.send(phy_payload_encoded):
+            print(f"{BColors.HEADER.value}SUCCESS SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+        else:
+            print(f"{BColors.FAIL.value}FAILED SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
@@ -186,9 +189,16 @@ class Watchdog:
                                            self.net_skey, True)
         phy_payload_encoded = encode_phy_payload(phy_payload)
         self.fCntUp += 1
-        self.gateway.up_link_publish(phy_payload_encoded)
-        print(f"{BColors.HEADER.value}SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+        if self.send(phy_payload_encoded):
+            print(f"{BColors.HEADER.value}SUCCESS SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+        else:
+            print(f"{BColors.FAIL.value}FAILED SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
 
+    def send(self, phy_payload):
+        result = False
+        for gateway in self.gateways:
+            result = result or gateway.up_link_publish(phy_payload)
+        return result
     def configure(self, downlink_configuration_payload):
         self.timetosend = downlink_configuration_payload.timetosend
         self.timetoreceive = downlink_configuration_payload.timetoreceive

@@ -112,7 +112,7 @@ class EdgeNode:
         conn_payload.state = state
         conn_payload.gatewayID = self.encoded_id_gateway
 
-        self.publish(conn_topic, conn_payload)
+        return self.publish(conn_topic, conn_payload)
 
     def stats_publish(self):
         stats_topic = EdgeNode.stats_topic % self.id_gateway
@@ -129,7 +129,7 @@ class EdgeNode:
         randstr = "stats" + str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
         stats_payload.statsID = base64.b64encode(randstr.encode()).decode()
 
-        self.publish(stats_topic, stats_payload)
+        return self.publish(stats_topic, stats_payload)
 
     def up_link_publish(self, phy_payload, tx_info=TxInfo()):
         up_topic = EdgeNode.up_topic % self.id_gateway
@@ -142,7 +142,7 @@ class EdgeNode:
 
         up_link_payload = UpPayload(phy_payload=phy_payload, tx_info=tx_info, rx_info=rx_info)
 
-        self.publish(up_topic, up_link_payload)
+        return self.publish(up_topic, up_link_payload)
 
     def tack_message_publish(self, tx_ack_status, downlink_id, token):
         ack_topic = EdgeNode.ack_topic % self.id_gateway
@@ -151,18 +151,19 @@ class EdgeNode:
         tx_ack_payload.items.append(TxAckItemPayload(tx_ack_status.name))
         tx_ack_payload.token = token
         tx_ack_payload.downlink_id = downlink_id
-        self.publish(ack_topic, tx_ack_payload)
+        return self.publish(ack_topic, tx_ack_payload)
 
     def echo_message_publish(self, gateway_id, ping_id):
         echo_topic = EdgeNode.echo_topic % self.id_gateway
         echo_payload = EchoPayload()
         echo_payload.gateway_id = gateway_id
         echo_payload.ping_id = ping_id
-        self.publish(echo_topic, echo_payload)
+        return self.publish(echo_topic, echo_payload)
 
     def publish(self, topic, payload: T):
         if not self.client.is_connected():
-            return print(f"{BColors.WARNING.value}Edgenode {self.id_gateway} not connected{BColors.ENDC.value}")
+            print(f"{BColors.WARNING.value}Edgenode {self.id_gateway} not connected{BColors.ENDC.value}")
+            return False
         # json conversion
         json_payload = get_json_from_object(payload)
         message = json.dumps(json_payload)
@@ -170,9 +171,11 @@ class EdgeNode:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            return print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} send message to topic {topic}{BColors.ENDC.value}")
+            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} send message to topic {topic}{BColors.ENDC.value}")
+            return True
 
-        return print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed to send message to topic {topic}{BColors.ENDC.value}")
+        print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed to send message to topic {topic}{BColors.ENDC.value}")
+        return False
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
