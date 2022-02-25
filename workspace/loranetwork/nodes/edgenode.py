@@ -14,6 +14,7 @@ from enums.crc_status_enum import CRCStatusEnum
 from enums.tx_ack_status_enum import TxAckStatusEnum
 # Payload message types
 from payloads.edgenode.conn_payload import ConnPayload
+from payloads.edgenode.echo_payload import EchoPayload
 from payloads.info.rx_info import RxInfo
 from payloads.info.tx_info import TxInfo
 from payloads.edgenode.stats_payload import StatsPayload
@@ -50,6 +51,8 @@ class EdgeNode:
     ack_topic = "gateway/%s/event/ack"
     down_topic = "gateway/%s/command/down"
     stats_topic = "gateway/%s/event/stats"
+    ping_topic = "gateway/%s/command/ping"
+    echo_topic = "gateway/%s/event/echo"
 
     def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None,
                  network_server_id=None):
@@ -145,10 +148,17 @@ class EdgeNode:
         ack_topic = EdgeNode.ack_topic % self.id_gateway
         tx_ack_payload = TxAckPayload()
         tx_ack_payload.gatewayID = self.encoded_id_gateway
-        tx_ack_payload.items.append(TxAckItemPayload(tx_ack_status.value))
+        tx_ack_payload.items.append(TxAckItemPayload(tx_ack_status.name))
         tx_ack_payload.token = token
         tx_ack_payload.downlink_id = downlink_id
         self.publish(ack_topic, tx_ack_payload)
+
+    def echo_message_publish(self, gateway_id, ping_id):
+        echo_topic = EdgeNode.echo_topic % self.id_gateway
+        echo_payload = EchoPayload()
+        echo_payload.gateway_id = gateway_id
+        echo_payload.ping_id = ping_id
+        self.publish(echo_topic, echo_payload)
 
     def publish(self, topic, payload: T):
         if not self.client.is_connected():
@@ -166,7 +176,9 @@ class EdgeNode:
 
     def subscribe(self):
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
+        ping_topic_to_sub = EdgeNode.ping_topic % self.id_gateway
         self.client.subscribe(down_topic_to_sub)
+        self.client.subscribe(ping_topic_to_sub)
 
     def close_connection(self):
         self.conn_publish(ConnectionStateEnum.OFFLINE.name)
@@ -195,19 +207,23 @@ class EdgeNode:
 
     def on_message(self, client, userdata, msg):
         print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} received message from topic: {msg.topic}{BColors.ENDC.value}")
+        down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
+        ping_topic_to_sub = EdgeNode.ping_topic % self.id_gateway
         message_decoded = json.loads(msg.payload.decode())
-        phy_payload = message_decoded['phyPayload']
-        result = False
-        for watchdog in self.watchdogs:
-            tx_info_str = json.dumps(message_decoded['txInfo'])
-            tx_info = json.loads(tx_info_str, object_hook=lambda d: SimpleNamespace(**d))
-            result = result or watchdog.receive_message(phy_payload, tx_info)
-
-        if result:
-            self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
-        if msg.state == 0:
-            self.rxPacketsReceivedOK += 1
-        self.rxPacketsReceived += 1
+        if msg.topic == down_topic_to_sub:
+            phy_payload = message_decoded['phyPayload']
+            result = False
+            for watchdog in self.watchdogs:
+                tx_info_str = json.dumps(message_decoded['txInfo'])
+                tx_info = json.loads(tx_info_str, object_hook=lambda d: SimpleNamespace(**d))
+                result = result or watchdog.receive_message(phy_payload, tx_info)
+            if result:
+                self.tack_message_publish(TxAckStatusEnum.OK, message_decoded['downlinkID'], message_decoded['token'])
+            if msg.state == 0:
+                self.rxPacketsReceivedOK += 1
+            self.rxPacketsReceived += 1
+        if msg.topic == ping_topic_to_sub:
+            self.echo_message_publish(message_decoded['id_gatway'], message_decoded['ping_id'])
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

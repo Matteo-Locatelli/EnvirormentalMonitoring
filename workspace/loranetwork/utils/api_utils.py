@@ -53,6 +53,21 @@ def get_device_key(dev_eui):
     return resp
 
 
+def get_last_gateway_ping(gateway_id):
+    channel = grpc.insecure_channel(server)
+
+    client = api.GatewayServiceStub(channel)
+
+    auth_token = [("authorization", "Bearer %s" % api_token)]
+
+    gateway_id_hex = int(gateway_id, 16).to_bytes(8, 'big').hex()
+    # Construct request.
+    req = api.GetLastPingRequest()
+    req.gateway_id = gateway_id_hex
+    resp = client.GetLastPing(req, metadata=auth_token)
+    return resp
+
+
 def enqueue_device_downlink(dev_eui, f_port, confirmed, data):
     channel = grpc.insecure_channel(server)
 

@@ -2,12 +2,15 @@ from datetime import datetime
 import time
 import json
 import base64
+import random
 from typing import TypeVar
 
 from paho.mqtt.client import Client
 
 from enums.bcolors import BColors
+from enums.working_state_enum import WorkingStateEnum
 from payloads.appserver.down_command_payload import DownCommandPayload
+from payloads.appserver.ping_payload import PingPayload
 from utils.app_server_utils import get_watchdog_app_server, get_watchdog_configuration
 from utils.payload_util import get_json_from_object
 
@@ -21,6 +24,12 @@ class AppServer:
     status_topic = "application/%s/device/%s/event/status"
     join_topic = "application/%s/device/%s/event/join"
     down_topic = "application/%s/device/%s/command/down"
+    ping_topic = "gateway/%s/command/ping"
+    echo_topic = "gateway/%s/event/echo"
+
+    # Timeout
+    watchdog_timeout = 10000
+    gateway_timout = 20000
 
     def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost"):
         self.broker = broker
@@ -34,6 +43,7 @@ class AppServer:
         self.application_name = application_name
         self.can_sand_data = False
         self.watchdogs = {}
+        self.gateways = {}
 
     def start_connection(self):
         try:
@@ -92,6 +102,39 @@ class AppServer:
         self.client.subscribe(up_topic_to_sub)
         self.client.subscribe(status_topic_to_sub)
 
+    def subscribe_ping(self, gateway_id):
+        echo_topic_to_sub = AppServer.echo_topic % gateway_id
+        self.client.subscribe(echo_topic_to_sub)
+
+    def ping_gateway(self, gateway_id):
+        ping_topic = AppServer.ping_topic % gateway_id
+        ping_payload = PingPayload()
+        ping_payload.gateway_id = gateway_id
+        randstr = "ping" + str(random.randint(0, 10000)) + random.randint(0, 10000).to_bytes(4, 'big').hex()
+        ping_payload.ping_id = base64.b64encode(randstr.encode()).decode()
+        self.publish(ping_topic, ping_payload)
+        self.gateways[gateway_id].num_pending_pings += 1
+        print(f"{BColors.OKGREEN.value}PING EDGENODE {gateway_id}{BColors.ENDC.value}")
+
+    def check_nodes(self):
+        current_timestamp = round(datetime.now().timestamp())
+        for dev_eui in self.watchdogs:
+            interval_time = (current_timestamp - self.watchdogs[dev_eui].last_seen) * 1000
+            if interval_time > AppServer.watchdog_timeout and self.watchdogs[dev_eui].active:
+                self.watchdogs[dev_eui].num_failure += 1
+            if self.watchdogs[dev_eui].num_failure >= 3 and self.watchdogs[dev_eui].active:
+                self.watchdogs[dev_eui].state = WorkingStateEnum.KO.name
+                self.watchdogs[dev_eui].active = False
+                print(f"{BColors.WARNING.value}WATCHDOG {dev_eui} IS SILENT{BColors.ENDC.value}")
+        for gateway_id in self.gateways:
+            interval_time = (current_timestamp - self.gateways[gateway_id].last_seen) * 1000
+            if interval_time > AppServer.gateway_timout and self.gateways[gateway_id].active:
+                self.ping_gateway(gateway_id)
+            if self.gateways[gateway_id].num_pending_pings >= 3 and self.gateways[gateway_id].active:
+                self.gateways[gateway_id].state = WorkingStateEnum.KO.name
+                self.gateways[gateway_id].active = False
+                print(f"{BColors.WARNING.value}EDGENODE {gateway_id} IS NOT WORKING{BColors.ENDC.value}")
+
     def close_connection(self):
         self.client.loop_stop()
         self.client.disconnect()
@@ -125,7 +168,8 @@ class AppServer:
         elif topic_type == "eventstatus":
             dev_eui_decoded = base64.b64decode(payload_decoded['devEUI'].encode()).hex()
             self.watchdogs[dev_eui_decoded].watchdog.batteryLevel = payload_decoded['batteryLevel']
-            self.watchdogs[dev_eui_decoded].watchdog.batteryLevelUnavailable = payload_decoded['batteryLevelUnavailable']
+            self.watchdogs[dev_eui_decoded].watchdog.batteryLevelUnavailable = payload_decoded[
+                'batteryLevelUnavailable']
             self.watchdogs[dev_eui_decoded].watchdog.margin = payload_decoded['margin']
             self.watchdogs[dev_eui_decoded].last_seen = round(datetime.now().timestamp())
             if self.watchdogs[dev_eui_decoded].active and \
@@ -138,6 +182,11 @@ class AppServer:
                 device_name = self.watchdogs[dev_eui_decoded].watchdog.deviceName
                 print(
                     f"{BColors.OKGREEN.value}APPSERVER ENQUEQUE WATCHDOG {device_name} CONFIGURATION{BColors.ENDC.value}")
+        elif topic_type == "eventecho":
+            self.gateways[payload_decoded['gateway_id']].last_seen = round(datetime.now().timestamp())
+            self.gateways[payload_decoded['gateway_id']].num_pending_pings = 0
+            self.gateways[payload_decoded['gateway_id']].state = WorkingStateEnum.OK.name
+            self.gateways[payload_decoded['gateway_id']].active = True
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)
