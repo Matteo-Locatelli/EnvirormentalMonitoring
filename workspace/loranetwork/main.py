@@ -13,12 +13,12 @@ from threads.thread_watchdog import ThreadWatchdog
 from utils.api_utils import get_device_key, get_device_list, get_gateway_list
 
 # broker address
-broker = "172.24.167.134"
+broker = "172.30.220.135"
 port = 1883
 
 # configuration
 application_id = 1
-app_server_enabled = True
+app_server_enabled = False
 
 
 def get_devices():
@@ -126,12 +126,12 @@ def main():
     # starting threads
     for thread_gateway in thread_gateway_list:
         thread_gateway.start()
-    for thread_watchdog in thread_watchdog_list:
+    for thread_watchdog in []:
         thread_watchdog.start()
         time.sleep(2)
 
     if app_server_enabled:
-        thread_app_server.init_app_server(devices)
+        thread_app_server.init_app_server(devices, gateway_list)
         thread_app_server.start()
 
     finish = 1
