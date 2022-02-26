@@ -8,7 +8,6 @@ from typing import TypeVar
 
 from paho.mqtt.client import Client
 
-from enums.bcolors import BColors
 from enums.connection_state_enum import ConnectionStateEnum
 from enums.crc_status_enum import CRCStatusEnum
 from enums.tx_ack_status_enum import TxAckStatusEnum
@@ -55,7 +54,7 @@ class EdgeNode:
     echo_topic = "gateway/%s/event/echo"
 
     def __init__(self, broker="", port=None, id_gateway="", name="", ip="localhost", organization_id=None,
-                 network_server_id=None):
+                 network_server_id=None, gateway_app=None):
         self.broker = broker
         self.port = port
         self.ip = ip
@@ -74,6 +73,7 @@ class EdgeNode:
         self.txPacketsReceived = 0  # Number of downlink packets received for transmission.
         self.txPacketsEmitted = 0  # Number of downlink packets emitted.
         self.watchdogs = []
+        self.app = gateway_app
         EdgeNode.number_of_gw += 1
 
     def start_connection(self):
@@ -90,18 +90,17 @@ class EdgeNode:
             self.client.on_subscribe = self.on_subscribe
             self.client.on_message = self.on_message
 
-            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} "
-                  f"connect: {self.client.connect(self.broker, self.port, 60)} {BColors.ENDC.value}")
+            self.app.print(f"Edgenode {self.id_gateway} connect: {self.client.connect(self.broker, self.port, 60)}")
             time.sleep(1)
             self.client.loop_start()
 
             while not self.client.is_connected():
                 time.sleep(1)
 
-            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} connected!{BColors.ENDC.value}")
+            self.app.print(f"Edgenode {self.id_gateway} connected!")
         except BaseException as err:
-            print(f"{BColors.WARNING.value}ERROR: Edgenode {self.id_gateway} Could not connect to MQTT.{BColors.ENDC.value}")
-            print(f"{BColors.FAIL.value}Unexpected {err=}, {type(err)=}{BColors.ENDC.value}")
+            self.app.print(f"ERROR: Edgenode {self.id_gateway} Could not connect to MQTT.")
+            self.app.print(f"Unexpected {err=}, {type(err)=}")
             self.close_connection()
 
     def conn_publish(self, state=ConnectionStateEnum.OFFLINE.name):
@@ -161,8 +160,10 @@ class EdgeNode:
         return self.publish(echo_topic, echo_payload)
 
     def publish(self, topic, payload: T):
+        if self.client is None:
+            return False
         if not self.client.is_connected():
-            print(f"{BColors.WARNING.value}Edgenode {self.id_gateway} not connected{BColors.ENDC.value}")
+            self.app.print(f"Edgenode {self.id_gateway} not connected")
             return False
         # json conversion
         json_payload = get_json_from_object(payload)
@@ -171,10 +172,10 @@ class EdgeNode:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} send message to topic {topic}{BColors.ENDC.value}")
+            self.app.print(f"Edgenode {self.id_gateway} send message to topic {topic}")
             return True
 
-        print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed to send message to topic {topic}{BColors.ENDC.value}")
+        self.app.print(f"Edgenode {self.id_gateway} failed to send message to topic {topic}")
         return False
 
     def subscribe(self):
@@ -184,32 +185,33 @@ class EdgeNode:
         self.client.subscribe(ping_topic_to_sub)
 
     def close_connection(self):
-        self.conn_publish(ConnectionStateEnum.OFFLINE.name)
-        self.client.loop_stop()
-        self.client.disconnect()
+        if self.client is not None:
+            self.conn_publish(ConnectionStateEnum.OFFLINE.name)
+            self.client.loop_stop()
+            self.client.disconnect()
 
     # call back functions
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.connected_flag = True
-            print(f"{BColors.OKBLUE.value}Connected OK Returned code={rc}{BColors.ENDC.value}")
+            self.app.print(f"Connected OK Returned code={rc}")
         else:
-            print(F"{BColors.FAIL.value}Bad connection Returned code={rc}{BColors.ENDC.value}")
+            self.app.print(F"Bad connection Returned code={rc}")
 
     def on_connect_fail(self):
-        print(f"{BColors.FAIL.value}Edgenode {self.id_gateway} failed connection{BColors.ENDC.value}")
+        self.app.print(f"Edgenode {self.id_gateway} failed connection")
 
     def on_publish(self, client, userdata, mid):
         self.txPacketsReceived += 1
 
     def on_disconnect(self, client, userdata, rc):
-        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} disconnected with code={rc}{BColors.ENDC.value}")
+        self.app.print(f"Edgenode {self.id_gateway} disconnected with code={rc}")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} Subscribed to topic {mid}{BColors.ENDC.value}")
+        self.app.print(f"Edgenode {self.id_gateway} Subscribed to topic {mid}")
 
     def on_message(self, client, userdata, msg):
-        print(f"{BColors.OKCYAN.value}Edgenode {self.id_gateway} received message from topic: {msg.topic}{BColors.ENDC.value}")
+        self.app.print(f"Edgenode {self.id_gateway} received message from topic: {msg.topic}")
         down_topic_to_sub = EdgeNode.down_topic % self.id_gateway
         ping_topic_to_sub = EdgeNode.ping_topic % self.id_gateway
         message_decoded = json.loads(msg.payload.decode())

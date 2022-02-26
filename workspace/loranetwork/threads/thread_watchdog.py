@@ -22,13 +22,23 @@ class ThreadWatchdog(Thread):
         self.timetoupdate = 2000
         self.start_time = time.time()
         self.finish_time = time.time()
+        self.app = None
 
     def run(self):
+        result = False
         resp = get_device_key(self.watchdog.devEUI)
         self.watchdog.app_key = resp.device_keys.nwk_key
-        self.threadLock.acquire()
-        self.watchdog.join()
-        self.threadLock.release()
+        self.watchdog.app = self.app
+        fail_count = 0
+        while not result:
+            self.threadLock.acquire()
+            result = self.watchdog.join()
+            self.threadLock.release()
+            fail_count += 1
+            if fail_count >= 3:
+                self.stop()
+                break
+            time.sleep(5)
         while self._running:
             current_millis = round(time.time() * 1000)
 
@@ -54,6 +64,7 @@ class ThreadWatchdog(Thread):
                 self.threadLock.release()
                 self.criticalSectionLock.release()
                 self.previousMillisS = current_millis
+            time.sleep(2)
 
     def stop(self):
         if self._running:
@@ -62,3 +73,4 @@ class ThreadWatchdog(Thread):
             life_time = round((self.finish_time - self.start_time)/60, 2)
             print(f"{BColors.HEADER.value}{BColors.UNDERLINE.value}THREAD WATCHDOG {self.watchdog.deviceName} "
                   f"STOPPED - LIFE TIME {life_time} minutes {BColors.ENDC.value}")
+            self.app.print(f"THREAD WATCHDOG {self.watchdog.deviceName} STOPPED - LIFE TIME {life_time} minutes")

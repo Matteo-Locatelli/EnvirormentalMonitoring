@@ -2,9 +2,10 @@
 import math
 import threading
 import time
-
+from tkinter import *
 from appserver.appserver import AppServer
 from enums.connection_state_enum import ConnectionStateEnum
+from gui.console_log_application import ConsoleLogApplication
 from nodes.edgenode import EdgeNode
 from nodes.watchdog import Watchdog
 from threads.thread_appserver import ThreadAppServer
@@ -18,7 +19,7 @@ port = 1883
 
 # configuration
 application_id = 1
-app_server_enabled = False
+app_server_enabled = True
 
 
 def get_devices():
@@ -106,6 +107,7 @@ def assign_watchdogs_to_gateways_full_connected(watchdog_list, gateway_list):
 def terminate_gateway_threads(thread_gateway_list):
     for thread_gateway in thread_gateway_list:
         thread_gateway.stop()
+        thread_gateway.gateway.client = None
 
 
 def terminate_watchdog_threads(thread_watchdog_list):
@@ -121,52 +123,129 @@ def main():
     gateways = get_gateways()
 
     # App Server
+    app_root = Tk()
+    app_root.geometry("600x600")
+    app_root.resizable(True, True)
+    app_root.title("Environmental monitoring")
+    # app_server_app = ConsoleLogApplication(app_root, "#56D548", "green", "APP SERVER CONSOLE LOG")
     app_server = AppServer(broker=broker, port=port, id_application=application_id, ip="localhost")
 
     # Node list creation
+    # Gateway
+    # gateway_app = ConsoleLogApplication(app_root, "#128fe3", "#12c4e3", "GATEWAY CONSOLE LOG")
     gateway_list = []
     for gw in gateways:
         gateway = EdgeNode(broker=broker, port=port, id_gateway=gw.id, name=gw.name,
                            organization_id=gw.organization_id,
                            network_server_id=gw.network_server_id)
-        gateway.start_connection()
-        gateway.subscribe()
-        gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
-        gateway.stats_publish()
-        time.sleep(1)
         gateway_list.append(gateway)
 
+    # Watchdog
+    # watchdog_app = ConsoleLogApplication(app_root, "#e01bd0", "#fc03f0", "WATCHDOG CONSOLE LOG")
     watchdog_list = []
     for device in devices:
         watchdog_list.append(Watchdog(application_id=device.application_id, device_name=device.name,
                                       device_profile_id=device.device_profile_id, dev_eui=device.dev_eui,
-                                      battery_level_unavailable=False,
-                                      battery_level=244, margin=device.device_status_margin))
+                                      battery_level_unavailable=False, battery_level=244,
+                                      margin=device.device_status_margin))
 
     thread_watchdog_list, thread_gateway_list = assign_watchdogs_to_gateways(watchdog_list, gateway_list)
     thread_app_server = ThreadAppServer(app_server)
 
-    # starting threads
-    for thread_gateway in thread_gateway_list:
-        thread_gateway.start()
-    for thread_watchdog in thread_watchdog_list:
-        thread_watchdog.start()
-        time.sleep(2)
+    # starting thread functions
+    def start_threads_gateway(start_button_gateway_to_destroy, stop_call_back, button):
+        gateway_window = Toplevel(app_root)
+        gateway_window.geometry("900x600")
 
-    if app_server_enabled:
+        def on_closing():
+            stop_call_back(button)
+            gateway_window.destroy()
+
+        gateway_window.protocol("WM_DELETE_WINDOW", on_closing)
+        gateway_app = ConsoleLogApplication(gateway_window, "#128fe3", "#12c4e3", "GATEWAY CONSOLE LOG")
+        for thread_gateway in thread_gateway_list:
+            thread_gateway.gateway.app = gateway_app
+            thread_gateway.app = gateway_app
+            thread_gateway.gateway.start_connection()
+            thread_gateway.gateway.subscribe()
+            thread_gateway.gateway.conn_publish(ConnectionStateEnum.ONLINE.name)
+            thread_gateway.gateway.stats_publish()
+            thread_gateway.start()
+        start_button_gateway_to_destroy.destroy()
+
+    def stop_threads_gateway(stop_button_gateway_to_destroy):
+        terminate_gateway_threads(thread_gateway_list)
+        stop_button_gateway_to_destroy.destroy()
+
+    stop_button_gateway = Button(app_root, text="Stop gateways",
+                                 command=lambda: stop_threads_gateway(stop_button_gateway))
+    stop_button_gateway.pack({"side": "bottom", "expand": "no"})
+    start_button_gateway = Button(app_root, text="Start gateways",
+                                  command=lambda: start_threads_gateway(start_button_gateway,
+                                                                        stop_threads_gateway,
+                                                                        stop_button_gateway))
+    start_button_gateway.pack({"side": "bottom", "expand": "no"})
+
+    def start_threads_watchdog(start_button_watchdog_to_destroy, stop_call_back, button):
+        watchdog_window = Toplevel(app_root)
+        watchdog_window.geometry("900x600")
+
+        def on_closing():
+            stop_call_back(button)
+            watchdog_window.destroy()
+
+        watchdog_window.protocol("WM_DELETE_WINDOW", on_closing)
+        watchdog_app = ConsoleLogApplication(watchdog_window, "#e01bd0", "#fc03f0", "WATCHDOG CONSOLE LOG")
+        for thread_watchdog in thread_watchdog_list:
+            thread_watchdog.watchdog.app = watchdog_app
+            thread_watchdog.app = watchdog_app
+            thread_watchdog.start()
+            time.sleep(2)
+        start_button_watchdog_to_destroy.destroy()
+
+    def stop_threads_watchdog(stop_button_watchdog_to_destroy):
+        terminate_watchdog_threads(thread_watchdog_list)
+        stop_button_watchdog_to_destroy.destroy()
+
+    stop_button_watchdog = Button(app_root, text="Stop watchdogs",
+                                  command=lambda: stop_threads_watchdog(stop_button_watchdog))
+    stop_button_watchdog.pack({"side": "left", "expand": "no"})
+    start_button_watchdog = Button(app_root, text="Start watchdogs",
+                                   command=lambda: start_threads_watchdog(start_button_watchdog,
+                                                                          stop_threads_watchdog,
+                                                                          stop_button_watchdog))
+    start_button_watchdog.pack({"side": "left", "expand": "no"})
+
+    def start_thread_app_server(start_button_to_destroy, stop_call_back, button):
+        app_server_window = Toplevel(app_root)
+
+        def on_closing():
+            stop_call_back(button)
+            app_server_window.destroy()
+
+        app_server_window.geometry("900x600")
+        app_server_window.protocol("WM_DELETE_WINDOW", on_closing)
+        app_server_app = ConsoleLogApplication(app_server_window, "#56D548", "green", "APP SERVER CONSOLE LOG")
+        thread_app_server.app_server.app = app_server_app
+        thread_app_server.app = app_server_app
         thread_app_server.init_app_server(devices, gateway_list)
         thread_app_server.start()
+        start_button_to_destroy.destroy()
 
-    finish = 1
-    while finish != "0":
-        finish = input("0 per terminare")
-        time.sleep(5)
-
-    terminate_gateway_threads(thread_gateway_list)
-    terminate_watchdog_threads(thread_watchdog_list)
+    def stop_thread_app_server(stop_button_to_destroy):
+        thread_app_server.stop()
+        stop_button_to_destroy.destroy()
 
     if app_server_enabled:
-        thread_app_server.stop()
+        stop_button = Button(app_root, text="Stop App Server",
+                             command=lambda: stop_thread_app_server(stop_button))
+        stop_button.pack({"side": "right", "expand": "no"})
+        start_button = Button(app_root, text="Start App Server",
+                              command=lambda: start_thread_app_server(start_button, stop_thread_app_server,
+                                                                      stop_button))
+        start_button.pack({"side": "right", "expand": "no"})
+
+    app_root.mainloop()
 
 
 if __name__ == "__main__":

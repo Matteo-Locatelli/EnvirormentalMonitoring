@@ -7,7 +7,6 @@ from typing import TypeVar
 
 from paho.mqtt.client import Client
 
-from enums.bcolors import BColors
 from enums.working_state_enum import WorkingStateEnum
 from payloads.appserver.down_command_payload import DownCommandPayload
 from payloads.appserver.ping_payload import PingPayload
@@ -31,7 +30,8 @@ class AppServer:
     watchdog_timeout = 10000
     gateway_timout = 20000
 
-    def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost"):
+    def __init__(self, broker="", port=None, id_application="", application_name="", ip="localhost",
+                 app_server_app=None):
         self.broker = broker
         self.port = port
         self.ip = ip
@@ -44,6 +44,7 @@ class AppServer:
         self.can_sand_data = False
         self.watchdogs = {}
         self.gateways = {}
+        self.app = app_server_app
 
     def start_connection(self):
         try:
@@ -57,18 +58,17 @@ class AppServer:
             self.client.on_disconnect = self.on_disconnect
             self.client.on_message = self.on_message
 
-            print(f"{BColors.OKGREEN.value}AppServer "
-                  f"connect: {self.client.connect(self.broker, self.port, 60)} {BColors.ENDC.value}")
+            self.app.print(f"AppServer connect: {self.client.connect(self.broker, self.port, 60)}")
             time.sleep(1)
             self.client.loop_start()
 
             while not self.client.is_connected():
                 time.sleep(1)
 
-            print(f"{BColors.OKGREEN.value}AppServer connected!{BColors.ENDC.value}")
+            self.app.print(f"AppServer connected!")
         except BaseException as err:
-            print(f"{BColors.WARNING.value}ERROR: AppServer Could not connect to MQTT.{BColors.ENDC.value}")
-            print(f"{BColors.FAIL.value}Unexpected {err=}, {type(err)=}{BColors.ENDC.value}")
+            self.app.print(f"ERROR: AppServer Could not connect to MQTT.")
+            self.app.print(f"Unexpected {err=}, {type(err)=}")
             self.close_connection()
 
     def down_link_publish(self, dev_eui, port, confirmed, data):
@@ -81,7 +81,8 @@ class AppServer:
 
     def publish(self, topic, payload: T):
         if not self.client.is_connected():
-            return print(f"{BColors.WARNING.value}Appserver not connected{BColors.ENDC.value}")
+            self.app.print(f"Appserver not connected!")
+            return
         # json conversion
         json_payload = get_json_from_object(payload)
         message = json.dumps(json_payload)
@@ -89,9 +90,11 @@ class AppServer:
         result = self.client.publish(topic, message)
         status = result[0]
         if status == 0:
-            return print(f"{BColors.OKGREEN.value}AppServer send message to topic {topic}{BColors.ENDC.value}")
+            self.app.print(f"AppServer send message to topic {topic}")
+            return
 
-        return print(f"{BColors.FAIL.value}AppServer failed to send message to topic {topic}{BColors.ENDC.value}")
+        self.app.print(f"AppServer failed to send message to topic {topic}")
+        return
 
     def subscribe(self, dev_eui):
         join_topic_to_sub = AppServer.join_topic % (self.id_application, dev_eui)
@@ -114,7 +117,7 @@ class AppServer:
         ping_payload.ping_id = base64.b64encode(randstr.encode()).decode()
         self.publish(ping_topic, ping_payload)
         self.gateways[gateway_id].num_pending_pings += 1
-        print(f"{BColors.OKGREEN.value}PING EDGENODE {gateway_id}{BColors.ENDC.value}")
+        self.app.print(f"PING EDGENODE {gateway_id}")
 
     def check_nodes(self):
         current_timestamp = round(datetime.now().timestamp())
@@ -125,7 +128,7 @@ class AppServer:
             if self.watchdogs[dev_eui].num_failure >= 3 and self.watchdogs[dev_eui].active:
                 self.watchdogs[dev_eui].state = WorkingStateEnum.KO.name
                 self.watchdogs[dev_eui].active = False
-                print(f"{BColors.WARNING.value}WATCHDOG {dev_eui} IS SILENT{BColors.ENDC.value}")
+                self.app.print(f"WATCHDOG {dev_eui} IS SILENT")
         for gateway_id in self.gateways:
             interval_time = (current_timestamp - self.gateways[gateway_id].last_seen) * 1000
             if interval_time > AppServer.gateway_timout and self.gateways[gateway_id].active:
@@ -133,7 +136,7 @@ class AppServer:
             if self.gateways[gateway_id].num_pending_pings >= 3 and self.gateways[gateway_id].active:
                 self.gateways[gateway_id].state = WorkingStateEnum.KO.name
                 self.gateways[gateway_id].active = False
-                print(f"{BColors.WARNING.value}EDGENODE {gateway_id} IS NOT WORKING{BColors.ENDC.value}")
+                self.app.print(f"EDGENODE {gateway_id} IS NOT WORKING")
 
     def close_connection(self):
         self.client.loop_stop()
@@ -143,18 +146,18 @@ class AppServer:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.client.connected_flag = True
-            print(f"{BColors.OKGREEN.value}Connected OK Returned code={rc}{BColors.ENDC.value}")
+            self.app.print(f"Connected OK Returned code={rc}")
         else:
-            print(f"{BColors.FAIL.value}Bad connection Returned code={rc}{BColors.ENDC.value}")
+            self.app.print(f"Bad connection Returned code={rc}")
 
     def on_connect_fail(self):
-        print(f"{BColors.FAIL.value}AppServer connection failed{BColors.ENDC.value}")
+        self.app.print(f"AppServer connection failed")
 
     def on_disconnect(self, client, userdata, rc):
-        print(f"{BColors.OKGREEN.value}AppServer disconnected with code={rc}{BColors.ENDC.value}")
+        self.app.print(f"AppServer disconnected with code={rc}")
 
     def on_message(self, client, userdata, msg):
-        print(f"{BColors.OKGREEN.value}AppServer received message from topic: {msg.topic}{BColors.ENDC.value}")
+        self.app.print(f"AppServer received message from topic: {msg.topic}")
         topic_splitted = msg.topic.split("/")
         topic_type = topic_splitted[-2] + topic_splitted[-1]
         payload_decoded = json.loads(msg.payload.decode())
@@ -180,8 +183,7 @@ class AppServer:
                 self.down_link_publish(dev_eui_decoded, 1, False, string_to_send_encoded)
                 # enqueue_device_downlink(devEUI_decoded, 1, False, string_to_send_encoded)
                 device_name = self.watchdogs[dev_eui_decoded].watchdog.deviceName
-                print(
-                    f"{BColors.OKGREEN.value}APPSERVER ENQUEQUE WATCHDOG {device_name} CONFIGURATION{BColors.ENDC.value}")
+                self.app.print(f"APPSERVER ENQUEQUE WATCHDOG {device_name} CONFIGURATION")
         elif topic_type == "eventecho":
             self.gateways[payload_decoded['gateway_id']].last_seen = round(datetime.now().timestamp())
             self.gateways[payload_decoded['gateway_id']].num_pending_pings = 0

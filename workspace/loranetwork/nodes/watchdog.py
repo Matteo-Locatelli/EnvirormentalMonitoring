@@ -2,7 +2,6 @@ import base64
 import json
 import random
 
-from enums.bcolors import BColors
 from enums.lorawan_version_enum import LorawanVersionEnum
 from enums.mac_command_enum import MacCommandEnum
 from enums.major_type_enum import MajorTypeEnum
@@ -34,7 +33,7 @@ class Watchdog:
     def __init__(self, application_id="", application_name="", device_name="", dev_eui="", margin=None,
                  external_power_source=False, battery_level_unavailable=True, battery_level=255, tags=Tags(),
                  device_profile_id="", device_profile_name="", app_key="", net_skey="", app_skey="",
-                 join_eui="0000000000000000", dev_addr=None, tx_info=TxInfo()):
+                 join_eui="0000000000000000", dev_addr=None, tx_info=TxInfo(), watchdog_app=None):
         self.applicationID = application_id
         self.applicationName = application_name
         self.deviceName = device_name
@@ -62,6 +61,7 @@ class Watchdog:
         self.timetosend = 5000  # timetosend ms
         self.timetoreceive = 5000  # timetoreceive in ms
         self.txInfo = tx_info
+        self.app = watchdog_app
 
     def join(self):
         phy_payload = PhyPayload()
@@ -75,8 +75,11 @@ class Watchdog:
         phy_payload_encoded = base64.b64decode(encode_phy_payload(phy_payload))
         phy_payload.mic = compute_join_request_mic(phy_payload_encoded, self.app_key)
         phy_payload_encoded = encode_phy_payload(phy_payload)
-        self.send(phy_payload_encoded)
         self.fCntUp += 1
+        if self.send(phy_payload_encoded):
+            self.app.print(f"SUCCESS SEND JOIN WATCHDOG: {self.deviceName}")
+        else:
+            self.app.print(f"FAILED SEND JOIN WATCHDOG: {self.deviceName}")
 
     def send_data(self):
         if not self.active:
@@ -117,10 +120,9 @@ class Watchdog:
         self.fCntUp += 1
         self.data.append(w_data)
         if self.send(phy_payload_encoded):
-            print(f"{BColors.HEADER.value}SUCCESS SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+            self.app.print(f"SUCCESS SEND DATA WATCHDOG: {self.deviceName}")
         else:
-            print(f"{BColors.FAIL.value}FAILED SEND DATA WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
-
+            self.app.print(f"FAILED SEND DATA WATCHDOG: {self.deviceName}")
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
@@ -145,7 +147,7 @@ class Watchdog:
         self.batteryLevel = 254
         self.margin = 7
         self.active = True
-        print(f"{BColors.HEADER.value}ACTIVATE WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+        self.app.print(f"ACTIVATE WATCHDOG: {self.deviceName}")
 
     def receive_message(self, phy_payload, tx_info):
         result = manage_received_message(self, phy_payload)
@@ -190,20 +192,21 @@ class Watchdog:
         phy_payload_encoded = encode_phy_payload(phy_payload)
         self.fCntUp += 1
         if self.send(phy_payload_encoded):
-            print(f"{BColors.HEADER.value}SUCCESS SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+            self.app.print(f"SUCCESS SEND STATUS WATCHDOG: {self.deviceName}")
         else:
-            print(f"{BColors.FAIL.value}FAILED SEND STATUS WATCHDOG: {self.deviceName}{BColors.ENDC.value}")
+            self.app.print(f"FAILED SEND STATUS WATCHDOG: {self.deviceName}")
 
     def send(self, phy_payload):
         result = False
         for gateway in self.gateways:
-            result = result or gateway.up_link_publish(phy_payload)
+            if gateway is not None:
+                result = result or gateway.up_link_publish(phy_payload)
         return result
+
     def configure(self, downlink_configuration_payload):
         self.timetosend = downlink_configuration_payload.timetosend
         self.timetoreceive = downlink_configuration_payload.timetoreceive
-        print(f"{BColors.HEADER.value}CONFIGURED WATCHDOG: {self.deviceName} - "
-              f"timetosend:{self.timetosend}ms timetoreceive:{self.timetoreceive}ms{BColors.ENDC.value}")
+        self.app.print(f"CONFIGURED WATCHDOG: {self.deviceName} - timetosend:{self.timetosend}ms timetoreceive:{self.timetoreceive}ms")
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=False, indent=4)

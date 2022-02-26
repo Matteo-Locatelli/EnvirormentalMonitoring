@@ -5,10 +5,11 @@ from enums.bcolors import BColors
 
 
 class ThreadEdgenode(Thread):
-    def __init__(self, gateway):
+    def __init__(self, gateway, gateway_app=None):
         Thread.__init__(self)
         self.gateway = gateway
         self._running = True
+        self.app = gateway_app
 
     def run(self):
         count = 0
