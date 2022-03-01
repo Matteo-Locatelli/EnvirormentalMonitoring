@@ -78,8 +78,10 @@ class Watchdog:
         self.fCntUp += 1
         if self.send(phy_payload_encoded):
             self.app.print(f"SUCCESS SEND JOIN WATCHDOG: {self.deviceName}")
+            return True
         else:
             self.app.print(f"FAILED SEND JOIN WATCHDOG: {self.deviceName}")
+            return False
 
     def send_data(self):
         if not self.active:
@@ -121,8 +123,10 @@ class Watchdog:
         self.data.append(w_data)
         if self.send(phy_payload_encoded):
             self.app.print(f"SUCCESS SEND DATA WATCHDOG: {self.deviceName}")
+            return True
         else:
             self.app.print(f"FAILED SEND DATA WATCHDOG: {self.deviceName}")
+            return False
 
     def __eq__(self, other):
         if not isinstance(other, Watchdog):
