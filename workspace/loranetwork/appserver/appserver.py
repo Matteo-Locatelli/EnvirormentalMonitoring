@@ -45,6 +45,8 @@ class AppServer:
         self.watchdogs = {}
         self.gateways = {}
         self.app = app_server_app
+        self.fault_detection = True
+        self.batteryAdaptation = True
 
     def start_connection(self):
         try:
@@ -121,22 +123,24 @@ class AppServer:
 
     def check_nodes(self):
         current_timestamp = round(datetime.now().timestamp())
-        for dev_eui in self.watchdogs:
-            interval_time = (current_timestamp - self.watchdogs[dev_eui].last_seen) * 1000
-            if interval_time > AppServer.watchdog_timeout and self.watchdogs[dev_eui].active:
-                self.watchdogs[dev_eui].num_failure += 1
-            if self.watchdogs[dev_eui].num_failure >= 3 and self.watchdogs[dev_eui].active:
-                self.watchdogs[dev_eui].state = WorkingStateEnum.KO.name
-                self.watchdogs[dev_eui].active = False
-                self.app.print(f"WATCHDOG {dev_eui} IS SILENT")
-        for gateway_id in self.gateways:
-            interval_time = (current_timestamp - self.gateways[gateway_id].last_seen) * 1000
-            if interval_time > AppServer.gateway_timout and self.gateways[gateway_id].active:
-                self.ping_gateway(gateway_id)
-            if self.gateways[gateway_id].num_pending_pings >= 3 and self.gateways[gateway_id].active:
-                self.gateways[gateway_id].state = WorkingStateEnum.KO.name
-                self.gateways[gateway_id].active = False
-                self.app.print(f"EDGENODE {gateway_id} IS NOT WORKING")
+        if self.batteryAdaptation:
+            for dev_eui in self.watchdogs:
+                interval_time = (current_timestamp - self.watchdogs[dev_eui].last_seen) * 1000
+                if interval_time > AppServer.watchdog_timeout and self.watchdogs[dev_eui].active:
+                    self.watchdogs[dev_eui].num_failure += 1
+                if self.watchdogs[dev_eui].num_failure >= 3 and self.watchdogs[dev_eui].active:
+                    self.watchdogs[dev_eui].state = WorkingStateEnum.KO.name
+                    self.watchdogs[dev_eui].active = False
+                    self.app.print(f"WATCHDOG {dev_eui} IS SILENT")
+        if self.fault_detection:
+            for gateway_id in self.gateways:
+                interval_time = (current_timestamp - self.gateways[gateway_id].last_seen) * 1000
+                if interval_time > AppServer.gateway_timout and self.gateways[gateway_id].active:
+                    self.ping_gateway(gateway_id)
+                if self.gateways[gateway_id].num_pending_pings >= 3 and self.gateways[gateway_id].active:
+                    self.gateways[gateway_id].state = WorkingStateEnum.KO.name
+                    self.gateways[gateway_id].active = False
+                    self.app.print(f"EDGENODE {gateway_id} IS NOT WORKING")
 
     def close_connection(self):
         self.client.loop_stop()

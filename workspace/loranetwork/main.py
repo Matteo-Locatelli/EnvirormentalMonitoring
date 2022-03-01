@@ -14,7 +14,7 @@ from threads.thread_watchdog import ThreadWatchdog
 from utils.api_utils import get_device_key, get_device_list, get_gateway_list
 
 # broker address
-broker = "172.30.220.135"
+broker = "172.28.245.217"
 port = 1883
 
 # configuration
@@ -82,7 +82,6 @@ def assign_watchdogs_to_gateways(watchdog_list, gateway_list):
 
 
 def assign_watchdogs_to_gateways_full_connected(watchdog_list, gateway_list):
-    devices_per_gateway = math.ceil(len(watchdog_list) / len(gateway_list))
     thread_watchdog_list = []
     thread_gateway_list = []
 
@@ -156,6 +155,7 @@ def main():
     def start_threads_gateway(start_button_gateway_to_destroy, stop_call_back, button):
         gateway_window = Toplevel(app_root)
         gateway_window.geometry("900x600")
+        gateway_window.title("Environmental monitoring: Gateways")
 
         def on_closing():
             stop_call_back(button)
@@ -188,6 +188,7 @@ def main():
 
     def start_threads_watchdog(start_button_watchdog_to_destroy, stop_call_back, button):
         watchdog_window = Toplevel(app_root)
+        watchdog_window.title("Environmental monitoring: Watchdogs")
         watchdog_window.geometry("900x600")
 
         def on_closing():
@@ -218,12 +219,13 @@ def main():
 
     def start_thread_app_server(start_button_to_destroy, stop_call_back, button):
         app_server_window = Toplevel(app_root)
+        app_server_window.title("Environmental monitoring: App Server")
+        app_server_window.geometry("900x600")
 
         def on_closing():
             stop_call_back(button)
             app_server_window.destroy()
 
-        app_server_window.geometry("900x600")
         app_server_window.protocol("WM_DELETE_WINDOW", on_closing)
         app_server_app = ConsoleLogApplication(app_server_window, "#56D548", "green", "APP SERVER CONSOLE LOG")
         thread_app_server.app_server.app = app_server_app

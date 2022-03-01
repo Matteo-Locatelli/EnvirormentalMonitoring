@@ -265,7 +265,7 @@ def decode_phy_payload(phy_payload_encoded):
         phy_payload.macPayload.bytes = base64.b64encode(mac_payload_byte).decode()
         phy_payload.mic = mic.hex()
         # print("  Data base64 encoded: %s" % base64.b64encode(macPayloadByte))
-    elif mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
+    elif mtype in (MessageTypeEnum.CONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
                    MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
         phy_payload.mhdr.mType = mtype.get_name()
         data_len = len(mac_payload_byte)
@@ -328,7 +328,7 @@ def encode_phy_payload(phy_payload):
         data += base64.b64decode(phy_payload.macPayload.bytes.encode())
         data += int(phy_payload.mic, 16).to_bytes(4, 'big')
         return base64.b64encode(data).decode()
-    if mtype in (MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
+    if mtype in (MessageTypeEnum.CONFIRMED_DATA_UP, MessageTypeEnum.CONFIRMED_DATA_DOWN,
                  MessageTypeEnum.UNCONFIRMED_DATA_UP, MessageTypeEnum.UNCONFIRMED_DATA_DOWN):
 
         data += (mtype.get_key() << 5).to_bytes(1, 'big')
@@ -364,11 +364,11 @@ def get_phy_payload_from_json(json_packet):
         p.macPayload.bytes = json_packet['macPayload']['bytes']
     else:
         p.macPayload.fhdr.devAddr = json_packet['macPayload']['fhdr']['devAddr']
-        p.macPayload.fhdr.fCtrl.ADR = json_packet['macPayload']['fhdr']['fCtrl']['adr']
-        p.macPayload.fhdr.fCtrl.ADRACKReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
-        p.macPayload.fhdr.fCtrl.ACK = json_packet['macPayload']['fhdr']['fCtrl']['ack']
-        p.macPayload.fhdr.fCtrl.FPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
-        p.macPayload.fhdr.fCtrl.ClassB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
+        p.macPayload.fhdr.fCtrl.adr = json_packet['macPayload']['fhdr']['fCtrl']['adr']
+        p.macPayload.fhdr.fCtrl.adrAckReq = json_packet['macPayload']['fhdr']['fCtrl']['adrAckReq']
+        p.macPayload.fhdr.fCtrl.ack = json_packet['macPayload']['fhdr']['fCtrl']['ack']
+        p.macPayload.fhdr.fCtrl.fPending = json_packet['macPayload']['fhdr']['fCtrl']['fPending']
+        p.macPayload.fhdr.fCtrl.classB = json_packet['macPayload']['fhdr']['fCtrl']['classB']
         p.macPayload.fhdr.fCnt = json_packet['macPayload']['fhdr']['fCnt']
         p.macPayload.fPort = json_packet['macPayload']['fPort']
         if json_packet['macPayload']['frmPayload'] is not None:
