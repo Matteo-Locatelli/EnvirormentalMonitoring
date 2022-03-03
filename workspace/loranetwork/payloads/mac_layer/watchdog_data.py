@@ -5,9 +5,6 @@ from utils.payload_util import get_json_from_object
 
 
 class WatchdogData:
-    humidity = 0
-    temperature = 0
-    battery = 100
 
     def __init__(self):
         self.humidity = 0
