@@ -10,7 +10,7 @@ The main communication technologies used are:
 - LoRaWan
 - gRPC
 
-#### Contributors
+###### Contributors
 - Wasim Essbai
 - Matteo Locatelli
 - Nicola Zambelli
