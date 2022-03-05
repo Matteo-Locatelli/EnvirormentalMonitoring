@@ -1,4 +1,4 @@
-# EnvironmentMonitoring
+# EnvironmentalMonitoring
 Project for the course "Porgettazione e Algoritmi" at the University of Bergamo - Master's degree in computer engineering.
 ## Description
 This project has the purpose to design an IoT-edge-cloud-computing software architecture applied to the enviromental monitoring.
